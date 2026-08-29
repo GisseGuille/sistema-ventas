@@ -1,0 +1,156 @@
+{
+  "productos": [
+    {
+      "id": "1787673750136",
+      "nombre": "Papas",
+      "categoria": "verdulería",
+      "precio": 3000,
+      "cantidad": 0,
+      "fecha": "2026-08-25"
+    },
+    {
+      "id": "1787673772874",
+      "nombre": "Fideos tallarin",
+      "categoria": "Almacén",
+      "precio": 2500,
+      "cantidad": 0,
+      "fecha": "2026-08-25"
+    },
+    {
+      "id": "1787673814599",
+      "nombre": "Narampol",
+      "categoria": "bebidas",
+      "precio": 2500,
+      "cantidad": 4,
+      "fecha": "2026-08-25"
+    },
+    {
+      "id": "1787673837799",
+      "nombre": "Pollo",
+      "categoria": "pollo",
+      "precio": 3500,
+      "cantidad": 15,
+      "fecha": "2026-08-25"
+    },
+    {
+      "id": "1787673903429",
+      "nombre": "Pan",
+      "categoria": "panadería",
+      "precio": 1000,
+      "cantidad": 0,
+      "fecha": "2026-08-25"
+    },
+    {
+      "id": "1787674375799",
+      "nombre": "Naranjas",
+      "categoria": "verdulería",
+      "precio": 5500,
+      "cantidad": 3,
+      "fecha": "2026-08-25"
+    },
+    {
+      "id": "1787683874384",
+      "nombre": "Jugo de naranja",
+      "categoria": "Almacén",
+      "precio": 2500,
+      "cantidad": 9,
+      "fecha": "2026-08-25"
+    }
+  ],
+  "ventas": [
+    {
+      "id": "sale-1787681689361",
+      "fecha": "2026-08-25T18:14:49.361Z",
+      "productos": [
+        {
+          "id": "1787673750136",
+          "nombre": "Papas",
+          "precio": 3000,
+          "cantidad": 1
+        },
+        {
+          "id": "1787673814599",
+          "nombre": "Narampol",
+          "precio": 2500,
+          "cantidad": 1
+        },
+        {
+          "id": "1787673772874",
+          "nombre": "Fideos tallarin",
+          "precio": 2500,
+          "cantidad": 2
+        }
+      ],
+      "total": 10500
+    },
+    {
+      "id": "sale-1787683925321",
+      "fecha": "2026-08-25T18:52:05.321Z",
+      "productos": [
+        {
+          "id": "1787673750136",
+          "nombre": "Papas",
+          "precio": 3000,
+          "cantidad": 1
+        },
+        {
+          "id": "1787683874384",
+          "nombre": "Jugo de naranja",
+          "precio": 2500,
+          "cantidad": 1
+        },
+        {
+          "id": "1787673837799",
+          "nombre": "Pollo",
+          "precio": 3500,
+          "cantidad": 5
+        }
+      ],
+      "total": 23000
+    },
+    {
+      "id": "sale-1787684946459",
+      "fecha": "2026-08-25T19:09:06.459Z",
+      "productos": [
+        {
+          "id": "1787673903429",
+          "nombre": "Pan",
+          "precio": 1000,
+          "cantidad": 5
+        },
+        {
+          "id": "1787674375799",
+          "nombre": "Naranjas",
+          "precio": 5500,
+          "cantidad": 2
+        },
+        {
+          "id": "1787673750136",
+          "nombre": "Papas",
+          "precio": 3000,
+          "cantidad": 1
+        }
+      ],
+      "total": 19000
+    },
+    {
+      "id": "sale-1787685170822",
+      "fecha": "2026-08-25T19:12:50.822Z",
+      "productos": [
+        {
+          "id": "1787673750136",
+          "nombre": "Papas",
+          "precio": 3000,
+          "cantidad": 1
+        },
+        {
+          "id": "1787673772874",
+          "nombre": "Fideos tallarin",
+          "precio": 2500,
+          "cantidad": 3
+        }
+      ],
+      "total": 10500
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+# Google Drive Shortcuts (Virtual Files)
+*.gdoc
+*.gsheet
+*.gslides
+*.gdraw
+*.gtable
+
+# Media and documents
+*.png
+*.avi
+*.pdf
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
