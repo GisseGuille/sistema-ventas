@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Despensa BG - Cocina | Sistema de Ventas</title>
+    <title>Bettina Guille - Cocina | Sistema de Ventas</title>
+    <!-- Supabase Client SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* Estilos Globales y Variables de Diseño */
         :root {
-            --primary-color: #2c3e50; /* Azul oscuro corporativo */
-            --secondary-color: #18bc9c; /* Verde esmeralda para destacar */
+            --primary-color: #32252a; /* Ciruela/Carbón oscuro elegante del logo */
+            --secondary-color: #d81b60; /* Rosa/Magenta vibrante de la acuarela del logo */
             --bg-color: #f8f9fa; /* Fondo gris muy claro */
             --card-bg: #ffffff; /* Fondo blanco para contenedores */
             --text-color: #333333; /* Texto principal */
@@ -470,12 +472,17 @@
 
     <div class="container">
         <!-- 1) ENCABEZADO -->
-        <header>
-            <h1>Despensa BG - Cocina</h1>
-            <p>Sistema de Gestión de Ventas y Productos (Local)</p>
+        <header style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 25px 20px;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 15px;">
+                <img src="logo.jpg" alt="Bettina Guille Cocina Logo" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+                <div style="text-align: left;">
+                    <h1 style="margin: 0; font-size: 2.1rem; font-weight: 700; color: white; letter-spacing: 0.5px;">Bettina Guille - Cocina</h1>
+                    <p style="margin: 3px 0 0 0; font-size: 1rem; color: rgba(255, 255, 255, 0.85); font-weight: 500;">Sistema de Gestión de Ventas y Productos</p>
+                </div>
+            </div>
             
             <!-- Acciones de Datos (Importar/Exportar) -->
-            <div class="data-actions" style="margin-top: 18px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+            <div class="data-actions" style="margin-top: 10px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
                 <button id="btnExport" class="btn-data-action" style="background-color: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.3); color: white; padding: 8px 16px; border-radius: 4px; font-weight: 600; cursor: pointer; transition: var(--transition);">
                     📥 Exportar datos
                 </button>
@@ -487,15 +494,20 @@
         </header>
 
         <!-- Barra de Navegación por Pantallas (Pestañas) -->
-        <nav class="nav-tabs">
-            <button id="tabBtn-ventas" class="tab-button active" onclick="cambiarPantalla('ventas')">
-                🛒 Registrar Ventas
-            </button>
-            <button id="tabBtn-productos" class="tab-button" onclick="cambiarPantalla('productos')">
-                📦 Gestión de Productos
-            </button>
-            <button id="tabBtn-reportes" class="tab-button" onclick="cambiarPantalla('reportes')">
-                📊 Reportes y Métricas
+        <nav class="nav-tabs" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+            <div style="display: flex; gap: 4px;">
+                <button id="tabBtn-ventas" class="tab-button active" onclick="cambiarPantalla('ventas')">
+                    🛒 Registrar Ventas
+                </button>
+                <button id="tabBtn-productos" class="tab-button" onclick="cambiarPantalla('productos')">
+                    📦 Gestión de Productos
+                </button>
+                <button id="tabBtn-reportes" class="tab-button" onclick="cambiarPantalla('reportes')">
+                    📊 Reportes y Métricas
+                </button>
+            </div>
+            <button id="tabBtn-config" class="tab-button" onclick="abrirModalConfig()" style="border: none; padding: 10px 15px; cursor: pointer; font-size: 1.1rem; color: #7f8c8d; background: transparent; transition: var(--transition);" title="Configuración de Base de Datos (Supabase)">
+                ⚙️ Base de Datos
             </button>
         </nav>
 
@@ -854,8 +866,8 @@
         </main>
          <!-- Footer -->
         <footer>
-            <p>&copy; 2026 Despensa BG - Cocina. Todos los derechos reservados.</p>
-            <p style="font-size: 0.75rem; margin-top: 5px;">Sistema local sin conexión a bases de datos ni internet.</p>
+            <p>&copy; 2026 Bettina Guille - Cocina. Todos los derechos reservados.</p>
+            <p style="font-size: 0.75rem; margin-top: 5px;">Conexión a Base de Datos (Supabase) con respaldo local inteligente.</p>
         </footer>
     </div>
 
@@ -865,6 +877,58 @@
         let editProductId = null; // Variable global para rastrear el ID del producto que se está editando
         let sortColumn = 'nombre';
         let sortDirection = 'asc';
+
+        // --- CONFIGURACIÓN DE CONEXIÓN A SUPABASE ---
+        const SUPABASE_URL_DEFAULT = 'https://your-project-id.supabase.co';
+        const SUPABASE_KEY_DEFAULT = 'your-anon-key-here';
+
+        let SUPABASE_URL = localStorage.getItem('supabase_url') || SUPABASE_URL_DEFAULT;
+        let SUPABASE_KEY = localStorage.getItem('supabase_key') || SUPABASE_KEY_DEFAULT;
+
+        let supabaseClient = null;
+        if (SUPABASE_URL && SUPABASE_KEY && !SUPABASE_URL.includes('your-project-id')) {
+            try {
+                if (window.supabase) {
+                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                }
+            } catch (err) {
+                console.error("Error al inicializar el cliente de Supabase", err);
+            }
+        }
+
+        // Abrir modal de configuración
+        function abrirModalConfig() {
+            const modal = document.getElementById('modalConfig');
+            if (modal) {
+                document.getElementById('configUrl').value = SUPABASE_URL.includes('your-project-id') ? '' : SUPABASE_URL;
+                document.getElementById('configKey').value = SUPABASE_KEY.includes('your-anon-key') ? '' : SUPABASE_KEY;
+                modal.style.display = 'flex';
+            }
+        }
+
+        // Cerrar modal
+        function cerrarModalConfig() {
+            const modal = document.getElementById('modalConfig');
+            if (modal) modal.style.display = 'none';
+        }
+
+        // Guardar configuración en localStorage y recargar
+        function guardarConfigSupabase() {
+            const url = document.getElementById('configUrl').value.trim();
+            const key = document.getElementById('configKey').value.trim();
+
+            if (url === '' || key === '') {
+                localStorage.removeItem('supabase_url');
+                localStorage.removeItem('supabase_key');
+                alert('Credenciales borradas. Volviendo a base de datos local (localStorage).');
+            } else {
+                localStorage.setItem('supabase_url', url);
+                localStorage.setItem('supabase_key', key);
+                alert('Credenciales de Supabase guardadas. Conectando...');
+            }
+            cerrarModalConfig();
+            window.location.reload();
+        }
 
         // Función para alternar pantallas de pestañas
         function cambiarPantalla(tabId) {
@@ -883,7 +947,7 @@
         }
 
         // Inicialización al cargar la página
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             inicializarFecha();
             configurarFormulario();
             configurarFiltros();
@@ -891,9 +955,9 @@
             configurarModuloVentas();
             configurarRespaldoDatos();
             inicializarDictadoPorVoz();
-            renderProductos();
-            actualizarReportes(); // Cargar métricas en inicio
-            renderVentasDelDia(); // Cargar historial del día en inicio
+            await renderProductos();
+            await actualizarReportes(); // Cargar métricas en inicio
+            await renderVentasDelDia(); // Cargar historial del día en inicio
         });
 
         // Establecer por defecto la fecha de hoy en el campo de fecha de compra
@@ -909,9 +973,9 @@
         function configurarFormulario() {
             const form = document.getElementById('productForm');
             if (form) {
-                form.addEventListener('submit', (e) => {
+                form.addEventListener('submit', async (e) => {
                     e.preventDefault();
-                    guardarProducto();
+                    await guardarProducto();
                 });
             }
 
@@ -948,10 +1012,10 @@
         }
 
         // Inicia el modo de edición precargando los datos del producto en el formulario
-        function editarProducto(id) {
+        async function editarProducto(id) {
             cambiarPantalla('productos'); // Cambiar automáticamente a la pantalla de productos
 
-            const productos = obtenerProductos();
+            const productos = await obtenerProductos();
             const prod = productos.find(p => p.id === id);
             if (!prod) return;
 
@@ -1022,19 +1086,43 @@
             }
         }
 
-        // Obtener productos desde localStorage
-        function obtenerProductos() {
+        // Obtener productos desde Supabase o localStorage (respaldo)
+        async function obtenerProductos() {
+            if (supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('productos')
+                        .select('*');
+                    if (error) throw error;
+                    // Guardar copia local actualizada
+                    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data || []));
+                    return data || [];
+                } catch (err) {
+                    console.error("Error al obtener productos de Supabase, usando respaldo local:", err);
+                }
+            }
             const productosRaw = localStorage.getItem(LOCAL_STORAGE_KEY);
             return productosRaw ? JSON.parse(productosRaw) : [];
         }
 
-        // Guardar lista completa de productos en localStorage
-        function guardarProductosEnStorage(productos) {
+        // Guardar lista completa de productos en Supabase y localStorage
+        async function guardarProductosEnStorage(productos) {
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(productos));
+            if (supabaseClient) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('productos')
+                        .upsert(productos);
+                    if (error) throw error;
+                } catch (err) {
+                    console.error("Error al guardar productos en Supabase:", err);
+                    alert("Error de conexión a Base de Datos. Los cambios se guardaron localmente en este navegador.");
+                }
+            }
         }
 
         // Guardar o actualizar un producto
-        function guardarProducto() {
+        async function guardarProducto() {
             const nombre = document.getElementById('prodNombre').value.trim();
             const categoria = document.getElementById('prodCategoria').value;
             const costoStr = document.getElementById('prodCosto').value.trim();
@@ -1089,7 +1177,7 @@
                 return;
             }
 
-            const productos = obtenerProductos();
+            const productos = await obtenerProductos();
 
             // Validar que no exista un producto con el mismo nombre
             const nombreNormalizado = nombre.toLowerCase().trim();
@@ -1118,7 +1206,7 @@
                     productos[index].fecha = fecha;
                     productos[index].estado = estado;
 
-                    guardarProductosEnStorage(productos);
+                    await guardarProductosEnStorage(productos);
                     alert('¡Producto actualizado con éxito!');
                 }
                 
@@ -1144,7 +1232,7 @@
                 };
 
                 productos.push(nuevoProducto);
-                guardarProductosEnStorage(productos);
+                await guardarProductosEnStorage(productos);
                 alert('¡Producto guardado con éxito!');
             }
 
@@ -1155,17 +1243,17 @@
             if (document.getElementById('searchNombre')) document.getElementById('searchNombre').value = '';
             if (document.getElementById('filterCategoria')) document.getElementById('filterCategoria').value = '';
 
-            renderProductos();
+            await renderProductos();
         }
 
         // Eliminar un producto (Baja)
-        function eliminarProducto(id) {
-            const productos = obtenerProductos();
+        async function eliminarProducto(id) {
+            const productos = await obtenerProductos();
             const prod = productos.find(p => p.id === id);
             if (!prod) return;
 
             // Verificar si el producto tiene ventas asociadas
-            const ventas = obtenerVentas();
+            const ventas = await obtenerVentas();
             const tieneVentasAsociadas = ventas.some(v => v.productos && v.productos.some(item => item.id === id));
 
             if (tieneVentasAsociadas) {
@@ -1173,8 +1261,8 @@
                 const index = productos.findIndex(p => p.id === id);
                 if (index !== -1) {
                     productos[index].estado = 'Inactivo';
-                    guardarProductosEnStorage(productos);
-                    renderProductos();
+                    await guardarProductosEnStorage(productos);
+                    await renderProductos();
                     alert('El producto tiene ventas asociadas, no se puede eliminar pero procederemos a su inactivación.');
                 }
             } else {
@@ -1185,18 +1273,18 @@
                         cancelarEdicion();
                     }
                     const productosActualizados = productos.filter(p => p.id !== id);
-                    guardarProductosEnStorage(productosActualizados);
-                    renderProductos();
+                    await guardarProductosEnStorage(productosActualizados);
+                    await renderProductos();
                 }
             }
         }
 
         // Renderizar la tabla de productos aplicando filtros
-        function renderProductos() {
+        async function renderProductos() {
             const tbody = document.getElementById('tableBody');
             if (!tbody) return;
 
-            const productos = obtenerProductos();
+            const productos = await obtenerProductos();
             
             // Obtener valores de filtrado
             const searchVal = document.getElementById('searchNombre') ? document.getElementById('searchNombre').value.toLowerCase().trim() : '';
@@ -1267,7 +1355,7 @@
                         </td>
                     </tr>
                 `;
-                actualizarDropdownsVenta();
+                await actualizarDropdownsVenta();
                 return;
             }
 
@@ -1284,7 +1372,7 @@
                         </td>
                     </tr>
                 `;
-                actualizarDropdownsVenta();
+                await actualizarDropdownsVenta();
                 return;
             }
 
@@ -1355,18 +1443,18 @@
             });
 
             // Sincronizar selectores del módulo de ventas
-            actualizarDropdownsVenta();
+            await actualizarDropdownsVenta();
         }
 
         // Conmuta la columna y dirección de ordenamiento, y re-renderiza la grilla
-        function ordenarGrilla(columna) {
+        async function ordenarGrilla(columna) {
             if (sortColumn === columna) {
                 sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
             } else {
                 sortColumn = columna;
                 sortDirection = 'asc';
             }
-            renderProductos();
+            await renderProductos();
         }
 
         // Actualiza el indicador visual de ordenación (flechas ▲, ▼ o neutral ↕) en las cabeceras
@@ -1403,26 +1491,26 @@
         function configurarModuloVentas() {
             const btnAdd = document.getElementById('btnAddSaleItem');
             if (btnAdd) {
-                btnAdd.addEventListener('click', () => {
-                    agregarFilaVenta();
+                btnAdd.addEventListener('click', async () => {
+                    await agregarFilaVenta();
                 });
             }
 
             const salesForm = document.getElementById('salesForm');
             if (salesForm) {
-                salesForm.addEventListener('submit', (e) => {
+                salesForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
-                    confirmarVenta();
+                    await confirmarVenta();
                 });
             }
         }
 
         // Agrega una fila de ítem de venta dinámicamente
-        function agregarFilaVenta() {
+        async function agregarFilaVenta() {
             const container = document.getElementById('saleItemsContainer');
             if (!container) return;
 
-            const productos = obtenerProductos();
+            const productos = await obtenerProductos();
             const productosConStock = productos.filter(p => p.cantidad > 0 && (p.estado || 'Activo') !== 'Inactivo');
 
             if (productosConStock.length === 0) {
@@ -1503,9 +1591,9 @@
         }
 
         // Sincroniza los dropdowns cuando cambia la base de datos de productos (sin perder la selección actual)
-        function actualizarDropdownsVenta() {
+        async function actualizarDropdownsVenta() {
             const selects = document.querySelectorAll('.select-sale-product');
-            const productos = obtenerProductos();
+            const productos = await obtenerProductos();
             const productosConStock = productos.filter(p => p.cantidad > 0 && (p.estado || 'Activo') !== 'Inactivo');
 
             selects.forEach(select => {
@@ -1545,7 +1633,7 @@
         }
 
         // Valida la venta, descuenta el stock de productos y la registra en 'ventas'
-        function confirmarVenta() {
+        async function confirmarVenta() {
             const container = document.getElementById('saleItemsContainer');
             if (!container) return;
 
@@ -1555,7 +1643,7 @@
                 return;
             }
 
-            const productos = obtenerProductos();
+            const productos = await obtenerProductos();
             const itemsVenta = [];
             const idsAgregados = new Set();
             let totalVenta = 0;
@@ -1619,12 +1707,8 @@
                 }
             });
 
-            // Guardar stock actualizado en localStorage
-            guardarProductosEnStorage(productos);
-
-            // Obtener y registrar venta en 'ventas'
-            const ventasRaw = localStorage.getItem(SALES_STORAGE_KEY);
-            const ventas = ventasRaw ? JSON.parse(ventasRaw) : [];
+            // Guardar stock actualizado
+            await guardarProductosEnStorage(productos);
 
             const nuevaVenta = {
                 id: 'sale-' + Date.now(),
@@ -1633,41 +1717,96 @@
                 total: totalVenta
             };
 
-            ventas.push(nuevaVenta);
-            localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(ventas));
+            // Guardar la venta en Supabase y respaldo local
+            await guardarVentaEnStorage(nuevaVenta);
 
             // Limpiar módulo de venta
             container.innerHTML = '';
             actualizarPreciosVenta();
             
             // Re-renderizar la tabla de productos (se verá reflejado el nuevo stock)
-            renderProductos();
+            await renderProductos();
 
             // Recalcular métricas, reportes e historial diario
-            actualizarReportes();
-            renderVentasDelDia();
+            await actualizarReportes();
+            await renderVentasDelDia();
 
             alert('¡Venta confirmada correctamente! El stock ha sido descontado.');
 
             // Volver a iniciar una fila vacía de venta si hay stock disponible
             const productosConStock = productos.filter(p => p.cantidad > 0);
             if (productosConStock.length > 0) {
-                agregarFilaVenta();
+                await agregarFilaVenta();
             }
         }
 
         /* --- MÓDULO DE REPORTES --- */
 
-        // Obtener historial de ventas desde localStorage
-        function obtenerVentas() {
+        // Obtener historial de ventas desde Supabase o localStorage (respaldo)
+        async function obtenerVentas() {
+            if (supabaseClient) {
+                try {
+                    // Selecciona todas las ventas con sus respectivos productos desde la tabla detalle_ventas
+                    const { data, error } = await supabaseClient
+                        .from('ventas')
+                        .select('*, productos:detalle_ventas(*)');
+                    if (error) throw error;
+                    // Guardar copia local actualizada
+                    localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(data || []));
+                    return data || [];
+                } catch (err) {
+                    console.error("Error al obtener ventas de Supabase, usando respaldo local:", err);
+                }
+            }
             const ventasRaw = localStorage.getItem(SALES_STORAGE_KEY);
             return ventasRaw ? JSON.parse(ventasRaw) : [];
         }
 
+        // Registrar una venta en Supabase y localStorage
+        async function guardarVentaEnStorage(nuevaVenta) {
+            // Respaldar localmente en localStorage
+            const ventasRaw = localStorage.getItem(SALES_STORAGE_KEY);
+            const ventas = ventasRaw ? JSON.parse(ventasRaw) : [];
+            ventas.push(nuevaVenta);
+            localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(ventas));
+
+            if (supabaseClient) {
+                try {
+                    // 1. Insertar la cabecera de la venta en la tabla 'ventas'
+                    const { error: errorVenta } = await supabaseClient
+                        .from('ventas')
+                        .insert({
+                            id: nuevaVenta.id,
+                            fecha: nuevaVenta.fecha,
+                            total: nuevaVenta.total
+                        });
+                    if (errorVenta) throw errorVenta;
+
+                    // 2. Insertar los productos asociados en la tabla 'detalle_ventas'
+                    const itemsInsert = nuevaVenta.productos.map(p => ({
+                        venta_id: nuevaVenta.id,
+                        producto_id: p.id,
+                        nombre: p.nombre,
+                        costo: p.costo,
+                        precio: p.precio,
+                        cantidad: p.cantidad
+                    }));
+
+                    const { error: errorDetalle } = await supabaseClient
+                        .from('detalle_ventas')
+                        .insert(itemsInsert);
+                    if (errorDetalle) throw errorDetalle;
+                } catch (err) {
+                    console.error("Error al registrar venta en Supabase:", err);
+                    alert("Error al guardar venta en la base de datos en la nube. Los cambios se guardaron localmente.");
+                }
+            }
+        }
+
         // Calcula las métricas de ventas y actualiza la UI aplicando filtros de fecha
-        function actualizarReportes() {
-            const ventas = obtenerVentas();
-            const productosBD = obtenerProductos();
+        async function actualizarReportes() {
+            const ventas = await obtenerVentas();
+            const productosBD = await obtenerProductos();
 
             // Leer fechas de los filtros
             const desdeStr = document.getElementById('reportFechaDesde') ? document.getElementById('reportFechaDesde').value : '';
@@ -1919,22 +2058,22 @@
         }
 
         // Limpia los campos de fecha del panel de reportes y actualiza los indicadores
-        function limpiarFiltrosReportes() {
+        async function limpiarFiltrosReportes() {
             const desdeInput = document.getElementById('reportFechaDesde');
             const hastaInput = document.getElementById('reportFechaHasta');
             
             if (desdeInput) desdeInput.value = '';
             if (hastaInput) hastaInput.value = '';
             
-            actualizarReportes();
+            await actualizarReportes();
         }
 
         // Renderiza el historial de ventas del día actual y totaliza la facturación diaria
-        function renderVentasDelDia() {
+        async function renderVentasDelDia() {
             const tbody = document.getElementById('todaySalesTableBody');
             if (!tbody) return;
 
-            const ventas = obtenerVentas();
+            const ventas = await obtenerVentas();
             const hoyObj = new Date();
             const hoy = hoyObj.toDateString();
 
@@ -1951,7 +2090,7 @@
             const ventasHoy = ventas.filter(v => new Date(v.fecha).toDateString() === hoy);
 
             // 3. Calcular y mostrar total facturado y total ganancia de hoy
-            const productosBD = obtenerProductos();
+            const productosBD = await obtenerProductos();
             let totalHoy = 0;
             let totalGananciaHoy = 0;
 
@@ -2070,9 +2209,9 @@
         }
 
         // Descarga un archivo JSON con los productos y ventas actuales
-        function exportarDatos() {
-            const productos = obtenerProductos();
-            const ventas = obtenerVentas();
+        async function exportarDatos() {
+            const productos = await obtenerProductos();
+            const ventas = await obtenerVentas();
 
             const backupData = {
                 productos: productos,
@@ -2099,13 +2238,13 @@
             URL.revokeObjectURL(url);
         }
 
-        // Lee el archivo JSON cargado y restaura los datos en localStorage
+        // Lee el archivo JSON cargado y restaura los datos en localStorage y Supabase
         function importarDatos(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
 
@@ -2127,14 +2266,46 @@
                     );
 
                     if (confirmacion) {
-                        // Guardar datos en localStorage
-                        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data.productos));
+                        // Guardar productos en localStorage y Supabase
+                        await guardarProductosEnStorage(data.productos);
+
+                        // Guardar ventas localmente
                         localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(data.ventas || []));
 
+                        // Sincronizar ventas con Supabase si está activo
+                        if (supabaseClient && data.ventas && data.ventas.length > 0) {
+                            try {
+                                const cabeceras = data.ventas.map(v => ({ id: v.id, fecha: v.fecha, total: v.total }));
+                                await supabaseClient.from('ventas').upsert(cabeceras);
+
+                                const detalles = [];
+                                data.ventas.forEach(v => {
+                                    if (v.productos) {
+                                        v.productos.forEach(p => {
+                                            detalles.push({
+                                                venta_id: v.id,
+                                                producto_id: p.id,
+                                                nombre: p.nombre,
+                                                costo: p.costo,
+                                                precio: p.precio,
+                                                cantidad: p.cantidad
+                                            });
+                                        });
+                                    }
+                                });
+
+                                if (detalles.length > 0) {
+                                    await supabaseClient.from('detalle_ventas').upsert(detalles);
+                                }
+                            } catch (dbErr) {
+                                console.error("Error al sincronizar importación de ventas en Supabase:", dbErr);
+                            }
+                        }
+
                         // Actualizar UI
-                        renderProductos();
-                        actualizarReportes();
-                        renderVentasDelDia();
+                        await renderProductos();
+                        await actualizarReportes();
+                        await renderVentasDelDia();
 
                         alert('¡Los datos han sido restaurados con éxito!');
                     }
@@ -2310,10 +2481,10 @@
                 detenerReconocimiento();
             };
 
-            recognition.onend = () => {
+            recognition.onend = async () => {
                 detenerReconocimiento();
                 if (recognition.textoAcumulado && recognition.textoAcumulado.trim() !== '') {
-                    procesarYAutocargarDictado(recognition.textoAcumulado);
+                    await procesarYAutocargarDictado(recognition.textoAcumulado);
                 } else {
                     alert('No se detectó ninguna palabra. Intenta nuevamente.');
                 }
@@ -2350,13 +2521,13 @@
             }
         }
 
-        function procesarYAutocargarDictado(texto) {
+        async function procesarYAutocargarDictado(texto) {
             const fraseNormalizada = texto.trim();
             if (fraseNormalizada === '') return;
 
             // Separar productos por la conjunción " y " o comas
             const frases = fraseNormalizada.split(/\b\s+y\s+\b|,\s*/i);
-            const productosBD = obtenerProductos();
+            const productosBD = await obtenerProductos();
             
             let agregadosCount = 0;
             let actualizadosCount = 0;
@@ -2404,8 +2575,8 @@
             });
 
             if (resumenProductos.length > 0) {
-                guardarProductosEnStorage(productosBD);
-                renderProductos();
+                await guardarProductosEnStorage(productosBD);
+                await renderProductos();
                 
                 alert(
                     `🎙️ ¡Audio procesado correctamente!\n\n` +
@@ -2424,5 +2595,28 @@
             }
         }
     </script>
+    <!-- MODAL DE CONFIGURACIÓN DE BASE DE DATOS (SUPABASE) -->
+    <div id="modalConfig" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
+        <div class="card" style="width: 90%; max-width: 480px; padding: 25px; border-radius: var(--border-radius); position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.15); background-color: white; margin: 10% auto;">
+            <span onclick="cerrarModalConfig()" style="position: absolute; right: 20px; top: 15px; font-size: 1.5rem; font-weight: bold; color: var(--text-muted); cursor: pointer; user-select: none;">&times;</span>
+            <h2 style="font-size: 1.25rem; color: var(--primary-color); margin-bottom: 15px; border-bottom: 2px solid #f1f2f6; padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">⚙️ Configurar Base de Datos</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Para persistir la información en internet y sincronizarla en la nube, ingresa tus credenciales de <strong>Supabase</strong>. Si las dejas vacías, el sistema seguirá guardando localmente.</p>
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label for="configUrl" style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; color: var(--primary-color);">Supabase URL</label>
+                <input type="text" id="configUrl" class="form-control" placeholder="https://your-project-id.supabase.co" style="width:100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label for="configKey" style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; color: var(--primary-color);">Supabase Anon Key (Clave API)</label>
+                <input type="text" id="configKey" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." style="width:100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;">
+            </div>
+
+            <div class="form-group" style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="guardarConfigSupabase()" class="btn-submit" style="margin-top: 0; flex: 1; height: 38px; background-color: var(--secondary-color); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Guardar y Conectar</button>
+                <button onclick="cerrarModalConfig()" class="btn-cancel" style="margin-top: 0; flex: 1; height: 38px; background-color: #e2e2e2; color: #333; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Cancelar</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
