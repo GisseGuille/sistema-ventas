@@ -3525,32 +3525,49 @@ Texto a analizar:
 "${texto}"`;
 
             try {
-                // Llamada a la API de Google Gemini (gemini-1.5-flash)
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
-                
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [
-                            {
-                                role: 'user',
-                                parts: [{ text: promptSistema }]
-                            }
-                        ],
-                        generationConfig: {
-                            temperature: 0.1,
-                            responseMimeType: "application/json"
-                        }
-                    })
-                });
+                // Lista de modelos compatibles de Gemini
+                const modelos = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest', 'gemini-1.5-flash'];
+                let response = null;
+                let data = null;
+                let lastError = null;
 
-                if (!response.ok) {
-                    const errData = await response.json().catch(() => ({}));
-                    throw new Error(errData.error?.message || `Error HTTP ${response.status}`);
+                for (const modelo of modelos) {
+                    try {
+                        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${geminiKey}`;
+                        const res = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [
+                                    {
+                                        role: 'user',
+                                        parts: [{ text: promptSistema }]
+                                    }
+                                ],
+                                generationConfig: {
+                                    temperature: 0.1,
+                                    responseMimeType: "application/json"
+                                }
+                            })
+                        });
+
+                        if (res.ok) {
+                            response = res;
+                            data = await res.json();
+                            break;
+                        } else {
+                            const errData = await res.json().catch(() => ({}));
+                            lastError = errData.error?.message || `Error ${res.status}`;
+                        }
+                    } catch (e) {
+                        lastError = e.message;
+                    }
                 }
 
-                const data = await response.json();
+                if (!data) {
+                    throw new Error(lastError || 'No se pudo conectar con los modelos de Gemini');
+                }
+
                 const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
                 
                 // Limpiar posibles etiquetas markdown
