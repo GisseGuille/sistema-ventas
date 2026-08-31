@@ -539,6 +539,15 @@
                 margin-top: 10px;
             }
         }
+        @keyframes pulse-red {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+            70% { transform: scale(1.04); box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+        .btn-recording {
+            background-color: #e74c3c !important;
+            animation: pulse-red 1.5s infinite !important;
+        }
     </style>
 </head>
 <body>
@@ -671,8 +680,8 @@
                 <section class="card">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
                         <h2 style="margin-bottom: 0;">📦 Cargar Producto</h2>
-                        <button type="button" id="btnDictar" class="btn-submit" style="margin-top: 0; background-color: #2980b9; height: 38px; padding: 0 15px; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;" title="Haz clic para grabar, y haz clic de nuevo para detener y enviar">
-                            <span id="dictarIcon">🎙️</span> <span id="dictarText">Grabar Audio (Estilo WhatsApp)</span>
+                        <button type="button" onclick="abrirModalAsistenteIA()" class="btn-submit" style="margin-top: 0; background: linear-gradient(135deg, #8e44ad, #d81b60); height: 40px; padding: 0 18px; font-size: 0.92rem; font-weight: 700; display: flex; align-items: center; gap: 8px; border: none; border-radius: 6px; box-shadow: 0 3px 10px rgba(216, 27, 96, 0.3); cursor: pointer;" title="Cargar productos con Asistente IA por voz o texto">
+                            <span>✨ Asistente IA (Voz o Texto)</span>
                         </button>
                     </div>
                     <form id="productForm">
@@ -1203,6 +1212,10 @@
             if (modal) {
                 document.getElementById('configUrl').value = SUPABASE_URL.includes('your-project-id') ? '' : SUPABASE_URL;
                 document.getElementById('configKey').value = SUPABASE_KEY.includes('your-anon-key') ? '' : SUPABASE_KEY;
+                const geminiKey = localStorage.getItem('gemini_api_key') || '';
+                if (document.getElementById('configGeminiKey')) {
+                    document.getElementById('configGeminiKey').value = geminiKey;
+                }
                 modal.style.display = 'flex';
             }
         }
@@ -1217,15 +1230,22 @@
         function guardarConfigSupabase() {
             const url = document.getElementById('configUrl').value.trim();
             const key = document.getElementById('configKey').value.trim();
+            const geminiKey = document.getElementById('configGeminiKey') ? document.getElementById('configGeminiKey').value.trim() : '';
+
+            if (geminiKey) {
+                localStorage.setItem('gemini_api_key', geminiKey);
+            } else {
+                localStorage.removeItem('gemini_api_key');
+            }
 
             if (url === '' || key === '') {
                 localStorage.removeItem('supabase_url');
                 localStorage.removeItem('supabase_key');
-                alert('Credenciales borradas. Volviendo a base de datos local (localStorage).');
+                alert('Configuración actualizada. Volviendo a base de datos local (localStorage).');
             } else {
                 localStorage.setItem('supabase_url', url);
                 localStorage.setItem('supabase_key', key);
-                alert('Credenciales de Supabase guardadas. Conectando...');
+                alert('Configuración guardada con éxito.');
             }
             cerrarModalConfig();
             window.location.reload();
@@ -1255,7 +1275,7 @@
             configurarBotonCancelar();
             configurarModuloVentas();
             configurarRespaldoDatos();
-            inicializarDictadoPorVoz();
+            inicializarAsistenteIA();
             configurarModuloProveedores();
             await renderProductos();
             await actualizarReportes(); // Cargar métricas en inicio
@@ -3327,304 +3347,402 @@
             renderPagosProveedores();
         }
 
-        /* --- MÓDULO DE DICTADO POR VOZ (NUEVO) --- */
+        /* --- MÓDULO DE ASISTENTE IA (GOOGLE GEMINI FLASH) --- */
 
-        let recognition = null;
-        let dictadosPreview = [];
+        let recognitionIA = null;
+        let isRecordingIA = false;
+        let productosIAPrevia = [];
 
-        const palabrasANumeros = {
-            'cero': 0, 'uno': 1, 'dos': 2, 'tres': 3, 'cuatro': 4, 'cinco': 5, 'seis': 6, 'siete': 7, 'ocho': 8, 'nueve': 9, 'diez': 10,
-            'once': 11, 'doce': 12, 'trece': 13, 'catorce': 14, 'quince': 15, 'dieciseis': 16, 'diecisiete': 17, 'dieciocho': 18, 'diecinueve': 19, 'veinte': 20,
-            'veintiuno': 21, 'veintidos': 22, 'veintitres': 23, 'veinticuatro': 24, 'veinticinco': 25, 'veintiseis': 26, 'veintisiete': 27, 'veintiocho': 28, 'veintinueve': 29, 'treinta': 30,
-            'cuarenta': 40, 'cincuenta': 50, 'sesenta': 60, 'setenta': 70, 'ochenta': 80, 'noventa': 90, 'cien': 100, 'ciento': 100, 'doscientos': 200, 'trescientos': 300, 'cuatrocientos': 400, 'quinientos': 500, 'seiscientos': 600, 'setecientos': 700, 'ochocientos': 800, 'novecientos': 900, 'mil': 1000
-        };
-
-        function removerAcentos(texto) {
-            return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        }
-
-        function normalizarPalabrasNumericas(texto) {
-            // Convertir a minúsculas y remover acentos para coincidencias limpias
-            let t = removerAcentos(texto.toLowerCase());
-            
-            // Reemplazar coma decimal por punto decimal (ej: "150,5" -> "150.5")
-            t = t.replace(/(\d+),(\d+)/g, '$1.$2');
-
-            // Reemplazar números compuestos como "treinta y cinco" -> "35"
-            const decenas = ['treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
-            const unidades = ['uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve'];
-            
-            decenas.forEach((dec, idxDec) => {
-                const valDec = (idxDec + 3) * 10;
-                unidades.forEach((uni, idxUni) => {
-                    const valUni = idxUni + 1;
-                    const regex = new RegExp(`\\b${dec}\\s+y\\s+${uni}\\b`, 'g');
-                    t = t.replace(regex, (valDec + valUni).toString());
-                });
-                // Reemplazar decena sola
-                const regexDec = new RegExp(`\\b${dec}\\b`, 'g');
-                t = t.replace(regexDec, valDec.toString());
-            });
-
-            // Reemplazar veintiuno..veintinueve
-            const veintenas = ['veintiuno', 'veintidos', 'veintitres', 'veinticuatro', 'veinticinco', 'veintiseis', 'veintisiete', 'veintiocho', 'veintinueve'];
-            veintenas.forEach((veinteStr, idx) => {
-                const val = 21 + idx;
-                const regex = new RegExp(`\\b${veinteStr}\\b`, 'g');
-                t = t.replace(regex, val.toString());
-            });
-
-            // Reemplazar mapeo directo para el resto de palabras
-            Object.keys(palabrasANumeros).sort((a, b) => b.length - a.length).forEach(palabra => {
-                const regex = new RegExp(`\\b${palabra}\\b`, 'g');
-                t = t.replace(regex, palabrasANumeros[palabra].toString());
-            });
-
-            return t;
-        }
-
-        function parsearFraseProducto(frase) {
-            if (!frase || frase.trim().length === 0) return null;
-
-            const fraseOriginal = frase.trim();
-            // Obtenemos la frase normalizada (minúscula, sin acentos y números numéricos)
-            const fraseNormalizada = normalizarPalabrasNumericas(fraseOriginal);
-
-            // Palabras clave normalizadas para buscar límites de nombre
-            const keywords = ['cantidad', 'cant', 'stock', 'unidades', 'kilos', 'kilo', 'kg', 'gramos', 'gramo', 'gr', 'costo', 'compra', 'comprado', 'ganancia', 'porcentaje', 'margen', 'rubro', 'categoria', 'tipo'];
-            
-            let indexPrimerKeyword = fraseNormalizada.length;
-
-            keywords.forEach(kw => {
-                // Hacemos que sea case-insensitive y busque palabra exacta
-                const regex = new RegExp(`\\b${kw}\\b`, 'i');
-                const match = fraseNormalizada.match(regex);
-                if (match && match.index < indexPrimerKeyword) {
-                    indexPrimerKeyword = match.index;
-                }
-            });
-
-            // Extraemos el nombre original con acentos y mayúsculas de la frase original
-            let nombre = fraseOriginal.substring(0, indexPrimerKeyword).trim();
-            
-            // Remover posibles conectores al final del nombre (ej: "leche de")
-            nombre = nombre.replace(/\s+(con|de|del|para)$/i, '').trim();
-
-            if (nombre.length > 0) {
-                nombre = nombre.charAt(0).toUpperCase() + nombre.slice(1);
-            } else {
-                nombre = 'Producto sin nombre';
-            }
-
-            // Buscar Unidad de Medida
-            let unidad_medida = 'Unidades';
-            if (/\b(kilos?|kg)\b/i.test(fraseNormalizada)) {
-                unidad_medida = 'Kilos';
-            } else if (/\b(gramos?|gramo|gr|g)\b/i.test(fraseNormalizada)) {
-                unidad_medida = 'Gramos';
-            } else if (/\b(unidades?|un|u)\b/i.test(fraseNormalizada)) {
-                unidad_medida = 'Unidades';
-            }
-
-            // Buscar Cantidad (admite enteros y decimales como 1.5, 0.5, "medio kilo", etc.)
-            let cantidad = 1;
-            if (/\bmedio\s+kilo\b/i.test(fraseNormalizada)) {
-                cantidad = 0.5;
-                unidad_medida = 'Kilos';
-            } else if (/\bun\s+kilo\s+y\s+medio\b/i.test(fraseNormalizada)) {
-                cantidad = 1.5;
-                unidad_medida = 'Kilos';
-            } else {
-                const matchCant = fraseNormalizada.match(/\b(?:cantidad|cant|stock|unidades|kilos?|kg|gramos?|gr|g)\s*(?:de|del)?\s*(\d+(?:\.\d+)?)\b/i) ||
-                                  fraseNormalizada.match(/\b(\d+(?:\.\d+)?)\s*(?:kilos?|kg|gramos?|gr|g|unidades?|un|u)\b/i);
-                if (matchCant) {
-                    cantidad = parseFloat(matchCant[1]);
-                }
-            }
-
-            // Buscar Costo (ej: "costo 100", "costo de 100", "comprado a 100")
-            let costo = 0;
-            const matchCosto = fraseNormalizada.match(/\b(costo|compra|comprado)\s*(?:de|del|a)?\s*(\d+(?:\.\d+)?)\b/i);
-            if (matchCosto) {
-                costo = parseFloat(matchCosto[2]);
-            }
-
-            // Buscar Ganancia (ej: "ganancia 50", "ganancia de 50", "porcentaje de 50")
-            let ganancia = 0;
-            const matchGanancia = fraseNormalizada.match(/\b(ganancia|porcentaje|margen)\s*(?:de|del|de la)?\s*(\d+(?:\.\d+)?)\b/i);
-            if (matchGanancia) {
-                ganancia = parseFloat(matchGanancia[2]);
-            }
-
-            // Buscar Categoría (ej: "categoria almacen", "categoria de almacen")
-            let categoria = 'Sin categoría';
-            const matchCat = fraseNormalizada.match(/\b(categoria|rubro|tipo)\s*(?:de|del)?\s*([a-z]+)\b/i);
-            if (matchCat) {
-                categoria = matchCat[2];
-                // Capitalizar
-                categoria = categoria.charAt(0).toUpperCase() + categoria.slice(1).toLowerCase();
-            }
-
-            return {
-                nombre,
-                cantidad,
-                unidad_medida,
-                costo,
-                ganancia,
-                categoria
-            };
-        }
-
-        function inicializarDictadoPorVoz() {
+        function inicializarAsistenteIA() {
+            // Verificar si el navegador soporta reconocimiento de voz
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
-                const btn = document.getElementById('btnDictar');
-                if (btn) {
-                    btn.title = "Dictado no soportado en este navegador";
-                    btn.style.opacity = '0.5';
-                    btn.style.cursor = 'not-allowed';
-                    btn.onclick = () => alert("Tu navegador no soporta el reconocimiento de voz. Por favor, usa Google Chrome o Microsoft Edge.");
+                const btnGrabar = document.getElementById('btnGrabarAudioIA');
+                if (btnGrabar) {
+                    btnGrabar.title = 'Tu navegador no soporta voz. Puedes escribir o pegar texto.';
                 }
+            }
+        }
+
+        function abrirModalAsistenteIA() {
+            const modal = document.getElementById('modalAsistenteIA');
+            if (!modal) return;
+
+            const geminiKey = localStorage.getItem('gemini_api_key') || '';
+            const alerta = document.getElementById('alertaFaltaGeminiKey');
+            if (alerta) {
+                alerta.style.display = geminiKey ? 'none' : 'block';
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function cerrarModalAsistenteIA() {
+            if (isRecordingIA) {
+                detenerGrabacionIA();
+            }
+            const modal = document.getElementById('modalAsistenteIA');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function guardarClaveRapidaGemini() {
+            const input = document.getElementById('quickGeminiKeyInput');
+            if (!input) return;
+            const key = input.value.trim();
+            if (!key) {
+                alert('Por favor ingresa una clave válida de Google Gemini.');
+                return;
+            }
+            localStorage.setItem('gemini_api_key', key);
+            const alerta = document.getElementById('alertaFaltaGeminiKey');
+            if (alerta) alerta.style.display = 'none';
+            alert('¡Clave de Google Gemini guardada con éxito!');
+        }
+
+        function limpiarEntradaIA() {
+            const textarea = document.getElementById('txtEntradaIA');
+            if (textarea) textarea.value = '';
+            cancelarPreviewIA();
+        }
+
+        function toggleGrabacionIA() {
+            if (isRecordingIA) {
+                detenerGrabacionIA();
+            } else {
+                iniciarGrabacionIA();
+            }
+        }
+
+        function iniciarGrabacionIA() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert('Tu navegador no soporta reconocimiento de voz nativo. Puedes escribir o pegar el texto directamente.');
                 return;
             }
 
-            recognition = new SpeechRecognition();
-            recognition.lang = 'es-AR';
-            recognition.continuous = true;
-            recognition.interimResults = false;
-            recognition.textoAcumulado = '';
+            if (!recognitionIA) {
+                recognitionIA = new SpeechRecognition();
+                recognitionIA.lang = 'es-AR';
+                recognitionIA.continuous = true;
+                recognitionIA.interimResults = true;
 
-            recognition.onstart = () => {
-                recognition.textoAcumulado = '';
-                document.getElementById('dictarIcon').innerText = '🛑';
-                document.getElementById('dictarText').innerText = 'Enviar Audio (Grabando...)';
-                document.getElementById('btnDictar').style.backgroundColor = '#e74c3c';
-            };
-
-            recognition.onerror = (event) => {
-                console.error("Error en reconocimiento de voz", event);
-                alert("Ocurrió un error al intentar escuchar: " + event.error);
-                detenerReconocimiento();
-            };
-
-            recognition.onend = async () => {
-                detenerReconocimiento();
-                if (recognition.textoAcumulado && recognition.textoAcumulado.trim() !== '') {
-                    await procesarYAutocargarDictado(recognition.textoAcumulado);
-                } else {
-                    alert('No se detectó ninguna palabra. Intenta nuevamente.');
-                }
-            };
-
-            recognition.onresult = (event) => {
-                let text = '';
-                for (let i = 0; i < event.results.length; i++) {
-                    text += event.results[i][0].transcript + ' ';
-                }
-                recognition.textoAcumulado = text;
-            };
-
-            const btn = document.getElementById('btnDictar');
-            if (btn) {
-                btn.addEventListener('click', () => {
-                    if (document.getElementById('dictarText').innerText.includes('Grabando')) {
-                        recognition.stop();
-                    } else {
-                        recognition.start();
+                recognitionIA.onresult = (event) => {
+                    let textoFinal = '';
+                    for (let i = 0; i < event.results.length; i++) {
+                        textoFinal += event.results[i][0].transcript + ' ';
                     }
+                    const textarea = document.getElementById('txtEntradaIA');
+                    if (textarea) {
+                        textarea.value = textoFinal.trim();
+                    }
+                };
+
+                recognitionIA.onerror = (event) => {
+                    console.error('Error en reconocimiento de voz IA:', event);
+                    detenerGrabacionIA();
+                };
+
+                recognitionIA.onend = () => {
+                    detenerGrabacionIA();
+                };
+            }
+
+            try {
+                recognitionIA.start();
+                isRecordingIA = true;
+                const btn = document.getElementById('btnGrabarAudioIA');
+                const txt = document.getElementById('txtGrabarIA');
+                const icon = document.getElementById('iconGrabarIA');
+                if (btn) btn.classList.add('btn-recording');
+                if (txt) txt.innerText = 'Escuchando... (Toca para parar)';
+                if (icon) icon.innerText = '🛑';
+            } catch (err) {
+                console.error('No se pudo iniciar reconocimiento:', err);
+            }
+        }
+
+        function detenerGrabacionIA() {
+            if (recognitionIA && isRecordingIA) {
+                try {
+                    recognitionIA.stop();
+                } catch(e) {}
+            }
+            isRecordingIA = false;
+            const btn = document.getElementById('btnGrabarAudioIA');
+            const txt = document.getElementById('txtGrabarIA');
+            const icon = document.getElementById('iconGrabarIA');
+            if (btn) btn.classList.remove('btn-recording');
+            if (txt) txt.innerText = 'Comenzar a Hablar';
+            if (icon) icon.innerText = '🎙️';
+        }
+
+        async function procesarConGeminiIA() {
+            const textarea = document.getElementById('txtEntradaIA');
+            const texto = textarea ? textarea.value.trim() : '';
+
+            if (!texto) {
+                alert('Por favor habla por el micrófono o escribe/pega el texto de los productos a cargar.');
+                if (textarea) textarea.focus();
+                return;
+            }
+
+            const geminiKey = localStorage.getItem('gemini_api_key') || '';
+            if (!geminiKey) {
+                const alerta = document.getElementById('alertaFaltaGeminiKey');
+                if (alerta) alerta.style.display = 'block';
+                alert('Para usar el Asistente IA necesitas ingresar tu clave gratuita de Google Gemini.');
+                return;
+            }
+
+            if (isRecordingIA) {
+                detenerGrabacionIA();
+            }
+
+            const loading = document.getElementById('loadingIA');
+            const seccionPreview = document.getElementById('seccionPreviewIA');
+            const btnProcesar = document.getElementById('btnProcesarIA');
+
+            if (loading) loading.style.display = 'block';
+            if (seccionPreview) seccionPreview.style.display = 'none';
+            if (btnProcesar) btnProcesar.disabled = true;
+
+            const promptSistema = `Eres un asistente experto para un negocio de alimentos y cocina en Argentina ("Bettina Guille - Cocina").
+Analiza el siguiente texto (que puede ser dictado por voz espontáneo con modismos argentinos o un mensaje de compras/remito) y extrae TODOS los productos mencionados.
+
+Debes responder ÚNICAMENTE con un arreglo JSON válido (sin formato markdown ni etiquetas \`\`\`json).
+
+Cada objeto del arreglo debe tener exactamente esta estructura:
+{
+  "nombre": "Nombre del producto con mayúscula inicial (ej: 'Pata muslo', 'Harina 0000', 'Tomate redondo')",
+  "categoria": "Categoría exacta deducida entre: 'Almacén', 'verdulería', 'bebidas', 'pollo', 'carbón', 'panadería', 'fiambreria'",
+  "cantidad": número decimal o entero (ej: 'dos kilos y medio' -> 2.5, 'medio kilo' -> 0.5, 'un cuarto' -> 0.25, 'tres' -> 3),
+  "unidad_medida": "Debe ser 'Kilos', 'Gramos' o 'Unidades'. (Si se vende por peso como carnes, verduras o fraccionados usa 'Kilos' o 'Gramos', si son paquetes o unidades usa 'Unidades')",
+  "costo": número decimal o entero con el costo unitario o por kilo (ej: 'tres mil quinientos' -> 3500, '50 lucas' -> 50000). Si no se indica, pon 0,
+  "ganancia": número con el porcentaje de ganancia (ej: '40' para 40%, 'margen del 35' -> 35). Si no se indica, asigna 40 por defecto
+}
+
+Texto a analizar:
+"${texto}"`;
+
+            try {
+                // Llamada a la API de Google Gemini (gemini-1.5-flash)
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [
+                            {
+                                role: 'user',
+                                parts: [{ text: promptSistema }]
+                            }
+                        ],
+                        generationConfig: {
+                            temperature: 0.1,
+                            responseMimeType: "application/json"
+                        }
+                    })
                 });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.error?.message || `Error HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+                
+                // Limpiar posibles etiquetas markdown
+                const cleanedText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+                const productosExtraidos = JSON.parse(cleanedText);
+
+                if (!Array.isArray(productosExtraidos) || productosExtraidos.length === 0) {
+                    alert('No se detectaron productos en el texto. Intenta ser más descriptivo o hablar más claro.');
+                    return;
+                }
+
+                productosIAPrevia = productosExtraidos;
+                renderizarTablaPreviaIA(productosIAPrevia);
+
+            } catch (err) {
+                console.error('Error al procesar con Gemini:', err);
+                alert('Error al comunicarse con la Inteligencia Artificial de Gemini:\n' + err.message + '\n\nVerifica tu clave de API en Configuración.');
+            } finally {
+                if (loading) loading.style.display = 'none';
+                if (btnProcesar) btnProcesar.disabled = false;
             }
         }
 
-        function detenerReconocimiento() {
-            const icon = document.getElementById('dictarIcon');
-            const text = document.getElementById('dictarText');
-            const btn = document.getElementById('btnDictar');
-            if (icon && text && btn) {
-                icon.innerText = '🎙️';
-                text.innerText = 'Grabar Audio (Estilo WhatsApp)';
-                btn.style.backgroundColor = '#2980b9';
+        function renderizarTablaPreviaIA(productos) {
+            const tbody = document.getElementById('tablaPreviewIABody');
+            const cantLabel = document.getElementById('cantProductosIADetectados');
+            const seccion = document.getElementById('seccionPreviewIA');
+
+            if (!tbody || !seccion) return;
+
+            tbody.innerHTML = '';
+            if (cantLabel) cantLabel.innerText = productos.length;
+
+            if (productos.length === 0) {
+                seccion.style.display = 'none';
+                return;
+            }
+
+            productos.forEach((prod, index) => {
+                const tr = document.createElement('tr');
+                const costo = Number(prod.costo) || 0;
+                const ganancia = Number(prod.ganancia) || 0;
+                const precio = costo * (1 + (ganancia / 100));
+
+                tr.innerHTML = `
+                    <td style="padding: 6px;">
+                        <input type="text" value="${escapeHTML(prod.nombre)}" class="form-control" style="width: 100%; font-size: 0.85rem;" onchange="actualizarDatoPreviaIA(${index}, 'nombre', this.value)">
+                    </td>
+                    <td style="padding: 6px;">
+                        <select class="form-control" style="width: 100%; font-size: 0.85rem;" onchange="actualizarDatoPreviaIA(${index}, 'categoria', this.value)">
+                            <option value="Almacén" ${prod.categoria?.toLowerCase() === 'almacén' || prod.categoria?.toLowerCase() === 'almacen' ? 'selected' : ''}>Almacén</option>
+                            <option value="verdulería" ${prod.categoria?.toLowerCase() === 'verdulería' || prod.categoria?.toLowerCase() === 'verduleria' ? 'selected' : ''}>Verdulería</option>
+                            <option value="bebidas" ${prod.categoria?.toLowerCase() === 'bebidas' ? 'selected' : ''}>Bebidas</option>
+                            <option value="pollo" ${prod.categoria?.toLowerCase() === 'pollo' ? 'selected' : ''}>Pollo</option>
+                            <option value="carbón" ${prod.categoria?.toLowerCase() === 'carbón' || prod.categoria?.toLowerCase() === 'carbon' ? 'selected' : ''}>Carbón</option>
+                            <option value="panadería" ${prod.categoria?.toLowerCase() === 'panadería' || prod.categoria?.toLowerCase() === 'panaderia' ? 'selected' : ''}>Panadería</option>
+                            <option value="fiambreria" ${prod.categoria?.toLowerCase() === 'fiambreria' ? 'selected' : ''}>Fiambrería</option>
+                            <option value="Sin categoría" ${!prod.categoria ? 'selected' : ''}>Sin categoría</option>
+                        </select>
+                    </td>
+                    <td style="padding: 6px;">
+                        <input type="number" step="any" min="0" value="${prod.cantidad}" class="form-control" style="width: 100%; text-align: center; font-size: 0.85rem;" oninput="actualizarDatoPreviaIA(${index}, 'cantidad', parseFloat(this.value) || 0)">
+                    </td>
+                    <td style="padding: 6px;">
+                        <select class="form-control" style="width: 100%; font-size: 0.85rem;" onchange="actualizarDatoPreviaIA(${index}, 'unidad_medida', this.value)">
+                            <option value="Unidades" ${prod.unidad_medida === 'Unidades' ? 'selected' : ''}>Unidades</option>
+                            <option value="Kilos" ${prod.unidad_medida === 'Kilos' ? 'selected' : ''}>Kilos</option>
+                            <option value="Gramos" ${prod.unidad_medida === 'Gramos' ? 'selected' : ''}>Gramos</option>
+                        </select>
+                    </td>
+                    <td style="padding: 6px;">
+                        <input type="number" step="0.01" min="0" value="${costo}" class="form-control" style="width: 100%; text-align: right; font-family: monospace; font-size: 0.85rem;" oninput="actualizarCostoGananciaPreviaIA(${index}, 'costo', parseFloat(this.value) || 0)">
+                    </td>
+                    <td style="padding: 6px;">
+                        <input type="number" min="0" value="${ganancia}" class="form-control" style="width: 100%; text-align: center; font-size: 0.85rem;" oninput="actualizarCostoGananciaPreviaIA(${index}, 'ganancia', parseFloat(this.value) || 0)">
+                    </td>
+                    <td id="previewPrecio-${index}" style="padding: 6px; font-family: monospace; font-weight: 700; text-align: right; color: var(--primary-color);">
+                        $${precio.toFixed(2)}
+                    </td>
+                    <td style="padding: 6px; text-align: center;">
+                        <button type="button" onclick="eliminarFilaPreviaIA(${index})" style="background: none; border: none; cursor: pointer; font-size: 1rem;" title="Quitar este producto">❌</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            seccion.style.display = 'block';
+            seccion.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function actualizarDatoPreviaIA(index, campo, valor) {
+            if (productosIAPrevia[index]) {
+                productosIAPrevia[index][campo] = valor;
             }
         }
 
-        async function procesarYAutocargarDictado(texto) {
-            const fraseNormalizada = texto.trim();
-            if (fraseNormalizada === '') return;
+        function actualizarCostoGananciaPreviaIA(index, campo, valor) {
+            if (productosIAPrevia[index]) {
+                productosIAPrevia[index][campo] = valor;
+                const costo = Number(productosIAPrevia[index].costo) || 0;
+                const ganancia = Number(productosIAPrevia[index].ganancia) || 0;
+                const precio = costo * (1 + (ganancia / 100));
+                const precioCell = document.getElementById(`previewPrecio-${index}`);
+                if (precioCell) {
+                    precioCell.innerText = `$${precio.toFixed(2)}`;
+                }
+            }
+        }
 
-            // Separar productos por la conjunción " y " o comas
-            const frases = fraseNormalizada.split(/\b\s+y\s+\b|,\s*/i);
+        function eliminarFilaPreviaIA(index) {
+            productosIAPrevia.splice(index, 1);
+            renderizarTablaPreviaIA(productosIAPrevia);
+        }
+
+        function cancelarPreviewIA() {
+            productosIAPrevia = [];
+            const seccion = document.getElementById('seccionPreviewIA');
+            if (seccion) seccion.style.display = 'none';
+        }
+
+        async function confirmarGuardadoProductosIA() {
+            if (!productosIAPrevia || productosIAPrevia.length === 0) {
+                alert('No hay productos para guardar.');
+                return;
+            }
+
             const productosBD = await obtenerProductos();
-            
             let agregadosCount = 0;
             let actualizadosCount = 0;
-            let resumenProductos = [];
+            const fechaHoy = new Date().toISOString().split('T')[0];
 
-            frases.forEach(frase => {
-                const prod = parsearFraseProducto(frase);
-                if (prod && prod.nombre !== 'Producto sin nombre' && prod.nombre.trim() !== '') {
-                    const nombreNormalizado = prod.nombre.toLowerCase().trim();
-                    const indexExistente = productosBD.findIndex(p => 
-                        p.nombre.toLowerCase().trim() === nombreNormalizado &&
-                        (p.estado || 'Activo') === 'Activo'
-                    );
-                    const precio = prod.costo * (1 + (prod.ganancia / 100));
+            productosIAPrevia.forEach(prod => {
+                const nombre = (prod.nombre || '').trim();
+                if (!nombre) return;
 
-                    if (indexExistente !== -1) {
-                        // Sumar stock con precisión decimal y actualizar costos/precios
-                        productosBD[indexExistente].cantidad = Math.round((productosBD[indexExistente].cantidad + prod.cantidad) * 1000) / 1000;
-                        productosBD[indexExistente].costo = prod.costo;
-                        productosBD[indexExistente].ganancia = prod.ganancia;
-                        productosBD[indexExistente].precio = precio;
-                        if (prod.unidad_medida) {
-                            productosBD[indexExistente].unidad_medida = prod.unidad_medida;
-                        }
-                        if (prod.categoria !== 'Sin categoría') {
-                            productosBD[indexExistente].categoria = prod.categoria;
-                        }
-                        actualizadosCount++;
-                        const cantFmt = formatearCantidad(prod.cantidad, prod.unidad_medida);
-                        resumenProductos.push(`• ${prod.nombre} (Stock sumado +${cantFmt}, Costo: $${prod.costo}, Ganancia: ${prod.ganancia}%)`);
-                    } else {
-                        // Crear producto nuevo
-                        const fechaHoy = new Date().toISOString().split('T')[0];
-                        productosBD.push({
-                            id: 'prod-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                            nombre: prod.nombre,
-                            categoria: prod.categoria,
-                            costo: prod.costo,
-                            ganancia: prod.ganancia,
-                            precio: precio,
-                            cantidad: prod.cantidad,
-                            unidad_medida: prod.unidad_medida || 'Unidades',
-                            fecha: fechaHoy,
-                            estado: 'Activo'
-                        });
-                        agregadosCount++;
-                        const cantFmt = formatearCantidad(prod.cantidad, prod.unidad_medida);
-                        resumenProductos.push(`• ${prod.nombre} (Nuevo, Cantidad: ${cantFmt}, Costo: $${prod.costo}, Ganancia: ${prod.ganancia}%)`);
+                const costo = Number(prod.costo) || 0;
+                const ganancia = Number(prod.ganancia) || 0;
+                const precio = costo * (1 + (ganancia / 100));
+                const cantidad = Number(prod.cantidad) || 0;
+                const unidad_medida = prod.unidad_medida || 'Unidades';
+                const categoria = prod.categoria || 'Sin categoría';
+
+                const nombreNormalizado = nombre.toLowerCase();
+                const indexExistente = productosBD.findIndex(p => 
+                    p.nombre.toLowerCase().trim() === nombreNormalizado &&
+                    (p.estado || 'Activo') === 'Activo'
+                );
+
+                if (indexExistente !== -1) {
+                    // Sumar stock con precisión decimal y actualizar costo/ganancia
+                    productosBD[indexExistente].cantidad = Math.round((productosBD[indexExistente].cantidad + cantidad) * 1000) / 1000;
+                    productosBD[indexExistente].costo = costo;
+                    productosBD[indexExistente].ganancia = ganancia;
+                    productosBD[indexExistente].precio = precio;
+                    productosBD[indexExistente].unidad_medida = unidad_medida;
+                    if (categoria !== 'Sin categoría') {
+                        productosBD[indexExistente].categoria = categoria;
                     }
+                    actualizadosCount++;
+                } else {
+                    // Crear nuevo producto
+                    productosBD.push({
+                        id: 'prod-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+                        nombre: nombre,
+                        categoria: categoria,
+                        costo: costo,
+                        ganancia: ganancia,
+                        precio: precio,
+                        cantidad: cantidad,
+                        unidad_medida: unidad_medida,
+                        fecha: fechaHoy,
+                        estado: 'Activo'
+                    });
+                    agregadosCount++;
                 }
             });
 
-            if (resumenProductos.length > 0) {
-                await guardarProductosEnStorage(productosBD);
-                await renderProductos();
-                
-                alert(
-                    `🎙️ ¡Audio procesado correctamente!\n\n` +
-                    `Productos Nuevos: ${agregadosCount}\n` +
-                    `Productos Actualizados: ${actualizadosCount}\n\n` +
-                    `Detalle de los productos cargados:\n` +
-                    resumenProductos.join('\n')
-                );
-            } else {
-                alert(
-                    `No pudimos interpretar ningún producto del audio.\n\n` +
-                    `Texto escuchado: "${texto}"\n\n` +
-                    `Recuerda usar la estructura sugerida. Ejemplo:\n` +
-                    `"leche cantidad diez costo doscientos ganancia cincuenta y coca cola cantidad seis costo ciento cincuenta ganancia cuarenta"`
-                );
+            await guardarProductosEnStorage(productosBD);
+            await renderProductos();
+            if (typeof actualizarDropdownsVenta === 'function') {
+                await actualizarDropdownsVenta();
             }
+
+            alert(
+                `✨ ¡Productos guardados con éxito!\n\n` +
+                `• Productos Nuevos: ${agregadosCount}\n` +
+                `• Productos Actualizados (Stock sumado): ${actualizadosCount}`
+            );
+
+            cancelarPreviewIA();
+            limpiarEntradaIA();
+            cerrarModalAsistenteIA();
         }
     </script>
     <!-- MODAL DE CONFIGURACIÓN DE BASE DE DATOS (SUPABASE) -->
@@ -3644,9 +3762,124 @@
                 <input type="text" id="configKey" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." style="width:100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;">
             </div>
 
+            <div class="form-group" style="margin-bottom: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                <label for="configGeminiKey" style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; color: #8e44ad;">
+                    ✨ Google Gemini API Key (Asistente IA)
+                </label>
+                <input type="text" id="configGeminiKey" class="form-control" placeholder="AIzaSy..." style="width:100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;">
+                <small style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 4px;">
+                    Obtén tu clave gratuita en <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--secondary-color); font-weight: 600;">Google AI Studio</a>.
+                </small>
+            </div>
+
             <div class="form-group" style="display: flex; gap: 10px; margin-top: 20px;">
                 <button onclick="guardarConfigSupabase()" class="btn-submit" style="margin-top: 0; flex: 1; height: 38px; background-color: var(--secondary-color); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Guardar y Conectar</button>
                 <button onclick="cerrarModalConfig()" class="btn-cancel" style="margin-top: 0; flex: 1; height: 38px; background-color: #e2e2e2; color: #333; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DEL ASISTENTE IA (GOOGLE GEMINI FLASH) -->
+    <div id="modalAsistenteIA" style="display: none; position: fixed; z-index: 1060; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.65); backdrop-filter: blur(2px);">
+        <div class="card" style="width: 92%; max-width: 820px; padding: 25px; border-radius: var(--border-radius); position: relative; box-shadow: 0 6px 30px rgba(0,0,0,0.25); background-color: white; margin: 3% auto;">
+            <span onclick="cerrarModalAsistenteIA()" style="position: absolute; right: 20px; top: 15px; font-size: 1.6rem; font-weight: bold; color: var(--text-muted); cursor: pointer; user-select: none;">&times;</span>
+            
+            <div style="display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #f1f2f6; padding-bottom: 12px; margin-bottom: 15px;">
+                <span style="font-size: 1.8rem;">✨</span>
+                <div>
+                    <h2 style="font-size: 1.3rem; color: var(--primary-color); margin: 0;">Asistente Inteligente de Carga (IA)</h2>
+                    <p style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">Habla libremente o escribe/pega una lista. Gemini Flash extraerá productos, pesos, costos, márgenes y categorías automáticamente.</p>
+                </div>
+            </div>
+
+            <!-- Aviso si falta la clave de API -->
+            <div id="alertaFaltaGeminiKey" style="display: none; background-color: #fff8e1; border: 1px solid #ffe082; padding: 12px 15px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem; color: #795548;">
+                <div style="font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                    <span>⚠️ Clave de Google Gemini no configurada</span>
+                </div>
+                <div>Para usar el Asistente IA necesitas una clave gratuita de Google Gemini.</div>
+                <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+                    <input type="text" id="quickGeminiKeyInput" placeholder="Pega tu clave AIzaSy..." style="flex: 1; min-width: 200px; padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85rem;">
+                    <button type="button" onclick="guardarClaveRapidaGemini()" style="background-color: var(--secondary-color); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 600; cursor: pointer;">Guardar Clave</button>
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" style="display: inline-flex; align-items: center; padding: 6px 10px; color: #1565c0; font-weight: 600; text-decoration: underline; font-size: 0.85rem;">Obtener clave gratis en Google</a>
+                </div>
+            </div>
+
+            <!-- Panel de Entrada (Grabación por Voz y Texto) -->
+            <div style="background-color: #f8f9fa; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 18px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                    <label for="txtEntradaIA" style="font-weight: 700; font-size: 0.95rem; color: var(--primary-color); display: flex; align-items: center; gap: 6px;">
+                        <span>🎙️ Dictado por Voz o 📝 Texto</span>
+                    </label>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" id="btnGrabarAudioIA" onclick="toggleGrabacionIA()" style="background-color: #2980b9; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: all 0.2s;">
+                            <span id="iconGrabarIA">🎙️</span> <span id="txtGrabarIA">Comenzar a Hablar</span>
+                        </button>
+                    </div>
+                </div>
+
+                <textarea id="txtEntradaIA" rows="4" class="form-control" style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.95rem; line-height: 1.4; resize: vertical;" placeholder="Ejemplo hablado o escrito:
+'Anotame dos kilos y medio de pata muslo a 3500 el kilo con 40 de ganancia, y cinco maples de huevos a seis mil para ganarle el 35%'"></textarea>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 12px;">
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">
+                        💡 <em>Tip: Habla con total libertad, la IA entenderá modismos argentinos, cantidades y cuentas.</em>
+                    </span>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" onclick="limpiarEntradaIA()" class="btn-cancel" style="margin-top: 0; padding: 8px 14px; font-size: 0.85rem;">
+                            Limpiar
+                        </button>
+                        <button type="button" id="btnProcesarIA" onclick="procesarConGeminiIA()" class="btn-submit" style="margin-top: 0; background: linear-gradient(135deg, #8e44ad, #2980b9); color: white; font-weight: 700; padding: 8px 20px; font-size: 0.95rem; border: none; border-radius: 4px; box-shadow: 0 3px 10px rgba(41, 128, 185, 0.3); display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <span>✨ Interpretar con IA</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Animación de Carga -->
+            <div id="loadingIA" style="display: none; text-align: center; padding: 25px; background-color: #fdfefe; border-radius: 8px; border: 1px dashed #2980b9; margin-bottom: 20px;">
+                <div style="font-size: 2.2rem; margin-bottom: 8px;">🧠✨</div>
+                <div style="font-weight: 700; color: var(--primary-color); font-size: 1rem;">La Inteligencia Artificial está interpretando tu pedido...</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Analizando nombres, unidades (kg/g/un), costos, ganancias y deduciendo categorías.</div>
+            </div>
+
+            <!-- Vista Previa de Productos Interpretados -->
+            <div id="seccionPreviewIA" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                    <h3 style="font-size: 1.05rem; color: var(--primary-color); margin: 0;">
+                        📋 Productos Detectados (<span id="cantProductosIADetectados">0</span>)
+                    </h3>
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Puedes modificar cualquier campo antes de confirmar:</span>
+                </div>
+
+                <div style="max-height: 280px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius); margin-bottom: 15px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+                        <thead style="position: sticky; top: 0; background-color: #f8f9fa; z-index: 10;">
+                            <tr>
+                                <th>Nombre Producto</th>
+                                <th style="width: 130px;">Categoría</th>
+                                <th style="width: 75px; text-align: center;">Cant.</th>
+                                <th style="width: 105px;">Unidad</th>
+                                <th style="width: 95px; text-align: right;">Costo ($)</th>
+                                <th style="width: 80px; text-align: center;">Gan. (%)</th>
+                                <th style="width: 100px; text-align: right;">P. Venta</th>
+                                <th style="width: 40px; text-align: center;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaPreviewIABody">
+                            <!-- Filas generadas por JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap;">
+                    <button type="button" onclick="cancelarPreviewIA()" class="btn-cancel" style="margin-top: 0; padding: 10px 18px;">
+                        Descartar
+                    </button>
+                    <button type="button" onclick="confirmarGuardadoProductosIA()" class="btn-submit" style="margin-top: 0; background-color: #27ae60; padding: 10px 24px; font-weight: 700; font-size: 1rem; box-shadow: 0 3px 10px rgba(39, 174, 96, 0.3);">
+                        💾 Confirmar y Guardar Todos
+                    </button>
+                </div>
             </div>
         </div>
     </div>
