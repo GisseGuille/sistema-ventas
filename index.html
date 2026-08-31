@@ -466,6 +466,77 @@
                 width: 250px;
                 margin-bottom: 0;
             }
+        /* Estilos del Módulo de Pago a Proveedores */
+        .badge-status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-status-pagado {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .badge-status-pendiente {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        .dropzone-container {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            text-align: center;
+            background-color: #fafbfc;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .dropzone-container:hover, .dropzone-container.dragover {
+            border-color: var(--secondary-color);
+            background-color: #fff0f6;
+        }
+        .comprobante-thumb {
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .comprobante-thumb:hover {
+            transform: scale(1.15);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .btn-status-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 4px 6px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .btn-status-toggle:hover {
+            background-color: #e2e8f0;
+        }
+        @media (min-width: 768px) {
+            .supplier-form-row-1 {
+                display: grid;
+                grid-template-columns: 1fr 1.5fr 1fr;
+                gap: 15px;
+            }
+            .supplier-form-row-2 {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 15px;
+                margin-top: 10px;
+            }
         }
     </style>
 </head>
@@ -505,6 +576,9 @@
                 </button>
                 <button id="tabBtn-reportes" class="tab-button" onclick="cambiarPantalla('reportes')">
                     📊 Reportes y Métricas
+                </button>
+                <button id="tabBtn-proveedores" class="tab-button" onclick="cambiarPantalla('proveedores')">
+                    🚚 Pago a Proveedores
                 </button>
             </div>
             <button id="tabBtn-config" class="tab-button" onclick="abrirModalConfig()" style="border: none; padding: 10px 15px; cursor: pointer; font-size: 1.1rem; color: #7f8c8d; background: transparent; transition: var(--transition);" title="Configuración de Base de Datos (Supabase)">
@@ -864,6 +938,215 @@
                     </div>
                 </section>
             </div>
+
+            <!-- PESTAÑA: PAGO A PROVEEDORES (NUEVO) -->
+            <div id="tab-proveedores" class="tab-content single-card-layout">
+                <!-- INDICADORES / KPIS DE PROVEEDORES -->
+                <div class="supplier-kpis-container" style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <!-- KPI Total Compras -->
+                    <div class="card" style="flex: 1; min-width: 180px; text-align: center; padding: 18px; margin-bottom: 0;">
+                        <h3 style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500; margin-bottom: 4px;">
+                            Total Compras / Gastos
+                        </h3>
+                        <div id="kpiTotalCompras" style="font-size: 1.6rem; font-weight: bold; color: var(--primary-color); font-family: monospace;">
+                            $0,00
+                        </div>
+                    </div>
+                    <!-- KPI Total Pagado -->
+                    <div class="card" style="flex: 1; min-width: 180px; text-align: center; padding: 18px; margin-bottom: 0;">
+                        <h3 style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500; margin-bottom: 4px;">
+                            Total Pagado
+                        </h3>
+                        <div id="kpiTotalPagado" style="font-size: 1.6rem; font-weight: bold; color: #27ae60; font-family: monospace;">
+                            $0,00
+                        </div>
+                    </div>
+                    <!-- KPI Total Pendiente -->
+                    <div class="card" style="flex: 1; min-width: 180px; text-align: center; padding: 18px; margin-bottom: 0; border: 1px solid #ffeeba; background-color: #fffdf5;">
+                        <h3 style="font-size: 0.85rem; color: #b7791f; font-weight: 600; margin-bottom: 4px;">
+                            ⚠️ Total Pendiente de Pago
+                        </h3>
+                        <div id="kpiTotalPendiente" style="font-size: 1.6rem; font-weight: bold; color: #d97706; font-family: monospace;">
+                            $0,00
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FORMULARIO DE PAGO / COMPRA A PROVEEDOR -->
+                <section class="card form-section" style="margin-bottom: 25px;">
+                    <h2 id="supplierFormTitle" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                        <span>🧾 Cargar Comprobante / Pago a Proveedor</span>
+                        <button type="button" onclick="abrirModalNuevoProveedor()" style="background-color: var(--primary-color); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                            ➕ Nuevo Proveedor
+                        </button>
+                    </h2>
+
+                    <form id="supplierPaymentForm">
+                        <!-- Fila 1: Fecha Compra, Proveedor, Importe -->
+                        <div class="supplier-form-row-1">
+                            <div class="form-group">
+                                <label for="payFechaCompra">Fecha de Compra *</label>
+                                <input type="date" id="payFechaCompra" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="payProveedor">Proveedor *</label>
+                                <div style="display: flex; gap: 8px;">
+                                    <select id="payProveedor" class="form-control" style="flex: 1;" required>
+                                        <option value="">Selecciona un proveedor...</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="payImporte">Importe ($) *</label>
+                                <input type="number" id="payImporte" class="form-control" step="0.01" min="0" placeholder="0.00" required>
+                            </div>
+                        </div>
+
+                        <!-- Fila 2: Forma de Pago, Fecha de Pago, Estado -->
+                        <div class="supplier-form-row-2">
+                            <div class="form-group">
+                                <label for="payFormaPago">Forma de Pago *</label>
+                                <select id="payFormaPago" class="form-control">
+                                    <option value="Efectivo">Efectivo</option>
+                                    <option value="Transferencia">Transferencia Bancaria</option>
+                                    <option value="Tarjeta de Débito">Tarjeta de Débito</option>
+                                    <option value="Tarjeta de Crédito">Tarjeta de Crédito</option>
+                                    <option value="Mercado Pago">Mercado Pago</option>
+                                    <option value="Cuenta Corriente">Cuenta Corriente</option>
+                                    <option value="Cheque">Cheque</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="payFechaPago">Fecha de Pago</label>
+                                <input type="date" id="payFechaPago" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="payEstado">Estado *</label>
+                                <select id="payEstado" class="form-control" onchange="actualizarFechaPagoSegunEstado()">
+                                    <option value="Pendiente">⏳ Pendiente</option>
+                                    <option value="Pagado">✅ Pagado</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Fila 3: Subida de Comprobante (Foto / Imagen) -->
+                        <div class="form-group" style="margin-top: 15px;">
+                            <label style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>📸 Foto de Factura / Comprobante de Respaldo</span>
+                                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: normal;">Formatos: PNG, JPG, JPEG, GIF</span>
+                            </label>
+                            
+                            <div id="dropzoneComprobante" class="dropzone-container" onclick="document.getElementById('fileComprobante').click()">
+                                <input type="file" id="fileComprobante" accept="image/png, image/jpeg, image/jpg, image/gif" style="display: none;">
+                                
+                                <div id="dropzonePrompt" style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px;">
+                                    <span style="font-size: 1.8rem;">📷</span>
+                                    <span style="font-weight: 600; color: var(--primary-color); font-size: 0.95rem;">
+                                        Haz clic aquí o arrastra la foto del comprobante
+                                    </span>
+                                    <span style="font-size: 0.8rem; color: var(--text-muted);">
+                                        Puedes tomar una foto con tu celular o subir un archivo desde tu dispositivo
+                                    </span>
+                                </div>
+
+                                <!-- Vista previa si hay imagen seleccionada -->
+                                <div id="dropzonePreview" style="display: none; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                                    <img id="imgPreviewComprobante" src="" alt="Vista previa" style="max-height: 90px; max-width: 140px; border-radius: 6px; border: 1px solid var(--border-color); object-fit: contain; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                                    <div style="text-align: left;">
+                                        <div id="previewFileName" style="font-weight: 600; font-size: 0.9rem; color: var(--primary-color);">comprobante.jpg</div>
+                                        <div style="margin-top: 6px; display: flex; gap: 8px;">
+                                            <button type="button" onclick="event.stopPropagation(); abrirModalVerComprobante(tempComprobanteBase64, 'Vista Previa Comprobante')" style="background-color: var(--primary-color); color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">🔍 Ver en grande</button>
+                                            <button type="button" onclick="event.stopPropagation(); eliminarComprobanteCargado()" style="background-color: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">🗑️ Quitar foto</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fila 4: Notas u Observaciones opcionales -->
+                        <div class="form-group" style="margin-top: 10px;">
+                            <label for="payNotas">Notas / Observaciones (Opcional)</label>
+                            <input type="text" id="payNotas" class="form-control" placeholder="Ej: Factura Nº 0001-000452, entregado por cadete..." maxlength="300">
+                        </div>
+
+                        <!-- Botones de Acción -->
+                        <div class="form-actions" style="margin-top: 20px; display: flex; gap: 12px;">
+                            <button type="submit" id="btnSubmitPago" class="btn-submit" style="flex: 1;">
+                                💾 Registrar Comprobante / Pago
+                            </button>
+                            <button type="button" id="btnCancelPagoEdit" class="btn-cancel" onclick="cancelarEdicionPago()" style="display: none; width: 140px;">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- GRILLA / HISTORIAL DE COMPROBANTES Y PAGOS -->
+                <section class="card table-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                        <h2 style="margin-bottom: 0;">📋 Historial de Comprobantes a Proveedores</h2>
+                        <span id="cantComprobantesLabel" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">0 comprobantes cargados</span>
+                    </div>
+
+                    <!-- Filtros de la Grilla -->
+                    <div style="background-color: #f8f9fa; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 15px; margin-bottom: 20px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; align-items: end;">
+                            <div>
+                                <label for="filtroPayProveedor" style="font-size: 0.85rem; font-weight: 600; color: var(--primary-color);">Proveedor:</label>
+                                <select id="filtroPayProveedor" class="form-control" style="margin-top: 4px;" onchange="renderPagosProveedores()">
+                                    <option value="">Todos los proveedores</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="filtroPayEstado" style="font-size: 0.85rem; font-weight: 600; color: var(--primary-color);">Estado:</label>
+                                <select id="filtroPayEstado" class="form-control" style="margin-top: 4px;" onchange="renderPagosProveedores()">
+                                    <option value="">Todos los estados</option>
+                                    <option value="Pendiente">⏳ Solo Pendientes</option>
+                                    <option value="Pagado">✅ Solo Pagados</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="filtroPayFechaDesde" style="font-size: 0.85rem; font-weight: 600; color: var(--primary-color);">Fecha Compra Desde:</label>
+                                <input type="date" id="filtroPayFechaDesde" class="form-control" style="margin-top: 4px;" onchange="renderPagosProveedores()">
+                            </div>
+                            <div>
+                                <label for="filtroPayFechaHasta" style="font-size: 0.85rem; font-weight: 600; color: var(--primary-color);">Fecha Compra Hasta:</label>
+                                <input type="date" id="filtroPayFechaHasta" class="form-control" style="margin-top: 4px;" onchange="renderPagosProveedores()">
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" class="btn-cancel" onclick="limpiarFiltrosPagos()" style="margin-top: 0; height: 38px; display: flex; align-items: center; justify-content: center; width: 100%; font-weight: 600;">
+                                    Limpiar Filtros
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Comprobantes -->
+                    <div style="max-height: 480px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius);">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead style="position: sticky; top: 0; background-color: #f8f9fa; z-index: 10;">
+                                <tr>
+                                    <th style="width: 105px;">F. Compra</th>
+                                    <th>Proveedor</th>
+                                    <th style="text-align: right; width: 110px;">Importe</th>
+                                    <th style="width: 130px;">Forma Pago</th>
+                                    <th style="width: 105px;">F. Pago</th>
+                                    <th style="text-align: center; width: 110px;">Estado</th>
+                                    <th style="text-align: center; width: 80px;">Foto</th>
+                                    <th style="text-align: center; width: 120px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="supplierPaymentsTableBody">
+                                <tr>
+                                    <td colspan="8" style="text-align: center; color: var(--text-muted); font-style: italic; padding: 20px;">
+                                        No hay comprobantes de proveedores registrados.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
         </main>
          <!-- Footer -->
         <footer>
@@ -875,7 +1158,12 @@
     <script>
         const LOCAL_STORAGE_KEY = 'bg_cocina_productos';
         const SALES_STORAGE_KEY = 'ventas';
+        const SUPPLIERS_STORAGE_KEY = 'bg_cocina_proveedores';
+        const PAYMENTS_STORAGE_KEY = 'bg_cocina_pagos_proveedores';
+
         let editProductId = null; // Variable global para rastrear el ID del producto que se está editando
+        let editPaymentId = null; // Variable global para rastrear el ID del comprobante/pago que se está editando
+        let tempComprobanteBase64 = null; // Almacenamiento temporal de la foto del comprobante
         let sortColumn = 'nombre';
         let sortDirection = 'asc';
 
@@ -933,7 +1221,7 @@
 
         // Función para alternar pantallas de pestañas
         function cambiarPantalla(tabId) {
-            const tabs = ['ventas', 'productos', 'reportes'];
+            const tabs = ['ventas', 'productos', 'reportes', 'proveedores'];
             tabs.forEach(id => {
                 const btn = document.getElementById('tabBtn-' + id);
                 const content = document.getElementById('tab-' + id);
@@ -956,6 +1244,7 @@
             configurarModuloVentas();
             configurarRespaldoDatos();
             inicializarDictadoPorVoz();
+            configurarModuloProveedores();
             await renderProductos();
             await actualizarReportes(); // Cargar métricas en inicio
             await renderVentasDelDia(); // Cargar historial del día en inicio
@@ -2209,14 +2498,18 @@
             }
         }
 
-        // Descarga un archivo JSON con los productos y ventas actuales
+        // Descarga un archivo JSON con los productos, ventas, proveedores y pagos actuales
         async function exportarDatos() {
             const productos = await obtenerProductos();
             const ventas = await obtenerVentas();
+            const proveedores = await obtenerProveedores();
+            const pagos = await obtenerPagosProveedores();
 
             const backupData = {
                 productos: productos,
-                ventas: ventas
+                ventas: ventas,
+                proveedores: proveedores,
+                pagos_proveedores: pagos
             };
 
             const jsonString = JSON.stringify(backupData, null, 2);
@@ -2261,9 +2554,10 @@
                     }
 
                     const confirmacion = confirm(
-                        `¿Seguro que querés importar los datos? Se sobrescribirá toda la información actual de productos y ventas.\n\n` +
+                        `¿Seguro que querés importar los datos? Se sobrescribirá la información actual.\n\n` +
                         `Productos a importar: ${data.productos.length}\n` +
-                        `Ventas a importar: ${data.ventas ? data.ventas.length : 0}`
+                        `Ventas a importar: ${data.ventas ? data.ventas.length : 0}\n` +
+                        `Comprobantes/Pagos a importar: ${data.pagos_proveedores ? data.pagos_proveedores.length : 0}`
                     );
 
                     if (confirmacion) {
@@ -2272,6 +2566,14 @@
 
                         // Guardar ventas localmente
                         localStorage.setItem(SALES_STORAGE_KEY, JSON.stringify(data.ventas || []));
+
+                        // Guardar proveedores y pagos si vienen en el archivo
+                        if (data.proveedores && Array.isArray(data.proveedores)) {
+                            await guardarProveedoresEnStorage(data.proveedores);
+                        }
+                        if (data.pagos_proveedores && Array.isArray(data.pagos_proveedores)) {
+                            await guardarPagosProveedoresEnStorage(data.pagos_proveedores);
+                        }
 
                         // Sincronizar ventas con Supabase si está activo
                         if (supabaseClient && data.ventas && data.ventas.length > 0) {
@@ -2303,10 +2605,12 @@
                             }
                         }
 
-                        // Actualizar UI
+                        // Actualizar UI completa
                         await renderProductos();
                         await actualizarReportes();
                         await renderVentasDelDia();
+                        await renderProveedoresDropdown();
+                        await renderPagosProveedores();
 
                         alert('¡Los datos han sido restaurados con éxito!');
                     }
@@ -2320,6 +2624,621 @@
             };
             
             reader.readAsText(file);
+        }
+
+        /* --- MÓDULO DE PAGO A PROVEEDORES Y COMPROBANTES (NUEVO) --- */
+
+        // Lista de proveedores por defecto si no existen
+        const PROVEEDORES_DEFAULT = [
+            { id: 'prov-1', nombre: 'Distribuidora San Juan', telefono: '342-4567890' },
+            { id: 'prov-2', nombre: 'Molino Cañuelas', telefono: '0800-333-6654' },
+            { id: 'prov-3', nombre: 'Lácteos del Sur', telefono: '342-4112233' },
+            { id: 'prov-4', nombre: 'Verdulería Mayorista Central', telefono: '342-4998877' },
+            { id: 'prov-5', nombre: 'Envases y Descartables Santa Fe', telefono: '342-4881122' }
+        ];
+
+        // Obtener proveedores desde Supabase o localStorage
+        async function obtenerProveedores() {
+            if (supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient.from('proveedores').select('*').order('nombre', { ascending: true });
+                    if (!error && data && data.length > 0) {
+                        localStorage.setItem(SUPPLIERS_STORAGE_KEY, JSON.stringify(data));
+                        return data;
+                    }
+                } catch (err) {
+                    console.error("Error al obtener proveedores de Supabase, usando local:", err);
+                }
+            }
+            const raw = localStorage.getItem(SUPPLIERS_STORAGE_KEY);
+            if (raw) {
+                try { return JSON.parse(raw); } catch (e) { return PROVEEDORES_DEFAULT; }
+            }
+            localStorage.setItem(SUPPLIERS_STORAGE_KEY, JSON.stringify(PROVEEDORES_DEFAULT));
+            return PROVEEDORES_DEFAULT;
+        }
+
+        // Guardar proveedores en storage y Supabase
+        async function guardarProveedoresEnStorage(proveedores) {
+            localStorage.setItem(SUPPLIERS_STORAGE_KEY, JSON.stringify(proveedores));
+            if (supabaseClient) {
+                try {
+                    await supabaseClient.from('proveedores').upsert(proveedores);
+                } catch (err) {
+                    console.error("Error al guardar proveedores en Supabase:", err);
+                }
+            }
+        }
+
+        // Renderizar menús desplegables de proveedores
+        async function renderProveedoresDropdown() {
+            const proveedores = await obtenerProveedores();
+            const selectForm = document.getElementById('payProveedor');
+            const selectFiltro = document.getElementById('filtroPayProveedor');
+            
+            if (selectForm) {
+                const actualVal = selectForm.value;
+                selectForm.innerHTML = '<option value="">Selecciona un proveedor...</option>';
+                proveedores.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.nombre;
+                    opt.textContent = p.nombre + (p.telefono ? ` (${p.telefono})` : '');
+                    selectForm.appendChild(opt);
+                });
+                if (actualVal) selectForm.value = actualVal;
+            }
+
+            if (selectFiltro) {
+                const actualFiltro = selectFiltro.value;
+                selectFiltro.innerHTML = '<option value="">Todos los proveedores</option>';
+                proveedores.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.nombre;
+                    opt.textContent = p.nombre;
+                    selectFiltro.appendChild(opt);
+                });
+                if (actualFiltro) selectFiltro.value = actualFiltro;
+            }
+
+            renderListaProveedoresModal(proveedores);
+        }
+
+        // Renderizar lista en modal de administración de proveedores
+        function renderListaProveedoresModal(proveedores) {
+            const container = document.getElementById('listaProveedoresExistentes');
+            if (!container) return;
+            if (proveedores.length === 0) {
+                container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">No hay proveedores registrados.</span>';
+                return;
+            }
+            container.innerHTML = proveedores.map(p => `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border-color); font-size: 0.85rem;">
+                    <div>
+                        <strong>${escapeHTML(p.nombre)}</strong>
+                        ${p.telefono ? `<span style="color: var(--text-muted); margin-left: 5px;">(${escapeHTML(p.telefono)})</span>` : ''}
+                    </div>
+                    <button type="button" onclick="eliminarProveedor('${p.id}')" title="Eliminar Proveedor" style="background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 0.9rem;">🗑️</button>
+                </div>
+            `).join('');
+        }
+
+        function abrirModalNuevoProveedor() {
+            const modal = document.getElementById('modalNuevoProveedor');
+            if (modal) {
+                document.getElementById('nuevoProveedorNombre').value = '';
+                document.getElementById('nuevoProveedorTelefono').value = '';
+                modal.style.display = 'flex';
+            }
+        }
+
+        function cerrarModalNuevoProveedor() {
+            const modal = document.getElementById('modalNuevoProveedor');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function guardarNuevoProveedor() {
+            const nombre = document.getElementById('nuevoProveedorNombre').value.trim();
+            const telefono = document.getElementById('nuevoProveedorTelefono').value.trim();
+            if (!nombre) {
+                alert('Por favor, ingresa el nombre del proveedor.');
+                return;
+            }
+            const proveedores = await obtenerProveedores();
+            if (proveedores.some(p => p.nombre.toLowerCase() === nombre.toLowerCase())) {
+                alert('Ya existe un proveedor con ese nombre.');
+                return;
+            }
+            const nuevo = {
+                id: 'prov-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6),
+                nombre: nombre,
+                telefono: telefono || ''
+            };
+            proveedores.push(nuevo);
+            await guardarProveedoresEnStorage(proveedores);
+            await renderProveedoresDropdown();
+            
+            const selectForm = document.getElementById('payProveedor');
+            if (selectForm) selectForm.value = nuevo.nombre;
+            cerrarModalNuevoProveedor();
+        }
+
+        async function eliminarProveedor(id) {
+            const proveedores = await obtenerProveedores();
+            const prov = proveedores.find(p => p.id === id);
+            if (!prov) return;
+            if (!confirm(`¿Seguro que deseas eliminar al proveedor "${prov.nombre}"?`)) return;
+            const actualizados = proveedores.filter(p => p.id !== id);
+            await guardarProveedoresEnStorage(actualizados);
+            if (supabaseClient) {
+                try { await supabaseClient.from('proveedores').delete().eq('id', id); } catch (e) {}
+            }
+            await renderProveedoresDropdown();
+        }
+
+        // Obtener historial de pagos a proveedores desde Supabase o localStorage
+        async function obtenerPagosProveedores() {
+            if (supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient.from('pagos_proveedores').select('*').order('fecha_compra', { ascending: false });
+                    if (!error && data) {
+                        localStorage.setItem(PAYMENTS_STORAGE_KEY, JSON.stringify(data));
+                        return data;
+                    }
+                } catch (err) {
+                    console.error("Error al obtener pagos de proveedores de Supabase:", err);
+                }
+            }
+            const raw = localStorage.getItem(PAYMENTS_STORAGE_KEY);
+            return raw ? JSON.parse(raw) : [];
+        }
+
+        // Guardar pagos en storage y Supabase
+        async function guardarPagosProveedoresEnStorage(pagos) {
+            localStorage.setItem(PAYMENTS_STORAGE_KEY, JSON.stringify(pagos));
+            if (supabaseClient) {
+                try {
+                    const { error } = await supabaseClient.from('pagos_proveedores').upsert(pagos);
+                    if (error) throw error;
+                } catch (err) {
+                    console.error("Error al guardar pagos a proveedores en Supabase:", err);
+                }
+            }
+        }
+
+        // Procesar y comprimir imágenes de comprobantes usando Canvas
+        function procesarArchivoComprobante(file) {
+            if (!file) return;
+            const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
+            if (!validTypes.includes(file.type)) {
+                alert('Formato de imagen no válido. Por favor sube un archivo PNG, JPG, JPEG o GIF.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const maxDimension = 1200;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > maxDimension || height > maxDimension) {
+                        if (width > height) {
+                            height = Math.round((height * maxDimension) / width);
+                            width = maxDimension;
+                        } else {
+                            width = Math.round((width * maxDimension) / height);
+                            height = maxDimension;
+                        }
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const compressedBase64 = canvas.toDataURL(file.type === 'image/png' ? 'image/png' : 'image/jpeg', 0.82);
+                    tempComprobanteBase64 = compressedBase64;
+                    mostrarPreviewComprobante(compressedBase64, file.name);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function mostrarPreviewComprobante(base64, filename) {
+            const prompt = document.getElementById('dropzonePrompt');
+            const preview = document.getElementById('dropzonePreview');
+            const img = document.getElementById('imgPreviewComprobante');
+            const nameLabel = document.getElementById('previewFileName');
+            
+            if (prompt) prompt.style.display = 'none';
+            if (preview) preview.style.display = 'flex';
+            if (img) img.src = base64;
+            if (nameLabel) nameLabel.textContent = filename || 'Comprobante adjunto';
+        }
+
+        function eliminarComprobanteCargado() {
+            tempComprobanteBase64 = null;
+            const prompt = document.getElementById('dropzonePrompt');
+            const preview = document.getElementById('dropzonePreview');
+            const fileInput = document.getElementById('fileComprobante');
+            const img = document.getElementById('imgPreviewComprobante');
+            
+            if (prompt) prompt.style.display = 'flex';
+            if (preview) preview.style.display = 'none';
+            if (fileInput) fileInput.value = '';
+            if (img) img.src = '';
+        }
+
+        function actualizarFechaPagoSegunEstado() {
+            const estado = document.getElementById('payEstado').value;
+            const fechaPagoInput = document.getElementById('payFechaPago');
+            if (estado === 'Pagado' && fechaPagoInput && !fechaPagoInput.value) {
+                fechaPagoInput.value = new Date().toISOString().split('T')[0];
+            }
+        }
+
+        async function guardarPagoProveedor(event) {
+            if (event) event.preventDefault();
+            
+            const fechaCompra = document.getElementById('payFechaCompra').value;
+            const proveedor = document.getElementById('payProveedor').value;
+            const importeStr = document.getElementById('payImporte').value;
+            const formaPago = document.getElementById('payFormaPago').value;
+            const fechaPago = document.getElementById('payFechaPago').value || null;
+            const estado = document.getElementById('payEstado').value;
+            const notas = document.getElementById('payNotas').value.trim();
+
+            if (!fechaCompra) {
+                alert('Por favor, selecciona la fecha de compra.');
+                return;
+            }
+            if (!proveedor) {
+                alert('Por favor, selecciona un proveedor.');
+                return;
+            }
+            const importe = parseFloat(importeStr);
+            if (isNaN(importe) || importe <= 0) {
+                alert('Por favor, ingresa un importe válido mayor a 0.');
+                return;
+            }
+
+            const pagos = await obtenerPagosProveedores();
+
+            if (editPaymentId) {
+                // Edición
+                const index = pagos.findIndex(p => p.id === editPaymentId);
+                if (index !== -1) {
+                    pagos[index].fecha_compra = fechaCompra;
+                    pagos[index].proveedor = proveedor;
+                    pagos[index].importe = importe;
+                    pagos[index].forma_pago = formaPago;
+                    pagos[index].fecha_pago = fechaPago;
+                    pagos[index].estado = estado;
+                    pagos[index].notas = notas;
+                    if (tempComprobanteBase64 !== null) {
+                        pagos[index].comprobante_base64 = tempComprobanteBase64;
+                    }
+                }
+                alert('¡Comprobante actualizado correctamente!');
+            } else {
+                // Nuevo pago
+                const nuevoPago = {
+                    id: 'pago-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6),
+                    fecha_compra: fechaCompra,
+                    proveedor: proveedor,
+                    importe: importe,
+                    forma_pago: formaPago,
+                    fecha_pago: fechaPago,
+                    estado: estado,
+                    notas: notas,
+                    comprobante_base64: tempComprobanteBase64 || null,
+                    fecha_registro: new Date().toISOString()
+                };
+                pagos.unshift(nuevoPago);
+                alert('¡Comprobante y pago registrado con éxito!');
+            }
+
+            await guardarPagosProveedoresEnStorage(pagos);
+            cancelarEdicionPago();
+            await renderPagosProveedores();
+        }
+
+        async function renderPagosProveedores() {
+            const pagos = await obtenerPagosProveedores();
+            const tbody = document.getElementById('supplierPaymentsTableBody');
+            const cantLabel = document.getElementById('cantComprobantesLabel');
+            const filtroProv = document.getElementById('filtroPayProveedor') ? document.getElementById('filtroPayProveedor').value : '';
+            const filtroEst = document.getElementById('filtroPayEstado') ? document.getElementById('filtroPayEstado').value : '';
+            const filtroDesde = document.getElementById('filtroPayFechaDesde') ? document.getElementById('filtroPayFechaDesde').value : '';
+            const filtroHasta = document.getElementById('filtroPayFechaHasta') ? document.getElementById('filtroPayFechaHasta').value : '';
+
+            // Calcular KPIs globales
+            let totalCompras = 0;
+            let totalPagado = 0;
+            let totalPendiente = 0;
+
+            pagos.forEach(p => {
+                const imp = Number(p.importe) || 0;
+                totalCompras += imp;
+                if (p.estado === 'Pagado') {
+                    totalPagado += imp;
+                } else {
+                    totalPendiente += imp;
+                }
+            });
+
+            const kpiComprasEl = document.getElementById('kpiTotalCompras');
+            const kpiPagadoEl = document.getElementById('kpiTotalPagado');
+            const kpiPendienteEl = document.getElementById('kpiTotalPendiente');
+
+            if (kpiComprasEl) kpiComprasEl.textContent = '$' + totalCompras.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            if (kpiPagadoEl) kpiPagadoEl.textContent = '$' + totalPagado.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            if (kpiPendienteEl) kpiPendienteEl.textContent = '$' + totalPendiente.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // Filtrar pagos para la tabla
+            let filtrados = pagos.filter(p => {
+                if (filtroProv && p.proveedor !== filtroProv) return false;
+                if (filtroEst && p.estado !== filtroEst) return false;
+                if (filtroDesde && p.fecha_compra < filtroDesde) return false;
+                if (filtroHasta && p.fecha_compra > filtroHasta) return false;
+                return true;
+            });
+
+            if (cantLabel) {
+                cantLabel.textContent = `${filtrados.length} comprobante${filtrados.length === 1 ? '' : 's'} visible${filtrados.length === 1 ? '' : 's'}`;
+            }
+
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            if (filtrados.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: var(--text-muted); font-style: italic; padding: 20px;">
+                            No se encontraron comprobantes con los filtros seleccionados.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            filtrados.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid var(--border-color)';
+
+                const badgeClass = p.estado === 'Pagado' ? 'badge-status-pagado' : 'badge-status-pendiente';
+                const badgeIcon = p.estado === 'Pagado' ? '✅ Pagado' : '⏳ Pendiente';
+
+                let thumbHtml = '<span style="color: var(--text-muted); font-size: 0.8rem;">Sin foto</span>';
+                if (p.comprobante_base64) {
+                    thumbHtml = `<img src="${p.comprobante_base64}" class="comprobante-thumb" alt="Foto Factura" title="Clic para ver comprobante" onclick="abrirModalVerComprobante('${p.id}', 'Factura: ${escapeHTML(p.proveedor)}')">`;
+                }
+
+                const fechaCompraFmt = p.fecha_compra ? p.fecha_compra.split('-').reverse().join('/') : '-';
+                const fechaPagoFmt = p.fecha_pago ? p.fecha_pago.split('-').reverse().join('/') : '-';
+
+                tr.innerHTML = `
+                    <td style="padding: 10px 8px; font-weight: 500; font-size: 0.9rem;">${fechaCompraFmt}</td>
+                    <td style="padding: 10px 8px; font-weight: 600; color: var(--primary-color);">
+                        ${escapeHTML(p.proveedor)}
+                        ${p.notas ? `<div style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">📝 ${escapeHTML(p.notas)}</div>` : ''}
+                    </td>
+                    <td style="padding: 10px 8px; text-align: right; font-weight: bold; font-family: monospace; font-size: 1rem; color: ${p.estado === 'Pagado' ? 'var(--text-color)' : '#d97706'};">
+                        $${Number(p.importe).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td style="padding: 10px 8px; font-size: 0.85rem; color: var(--text-muted);">${escapeHTML(p.forma_pago || 'Efectivo')}</td>
+                    <td style="padding: 10px 8px; font-size: 0.85rem; color: var(--text-muted);">${fechaPagoFmt}</td>
+                    <td style="padding: 10px 8px; text-align: center;">
+                        <span class="badge-status ${badgeClass}">${badgeIcon}</span>
+                    </td>
+                    <td style="padding: 6px 8px; text-align: center;">
+                        ${thumbHtml}
+                    </td>
+                    <td style="padding: 10px 8px; text-align: center;">
+                        <div style="display: flex; gap: 4px; justify-content: center;">
+                            <button type="button" class="btn-status-toggle" title="Cambiar Estado (Pagado/Pendiente)" onclick="cambiarEstadoPago('${p.id}')">
+                                ${p.estado === 'Pagado' ? '🔄' : '💰'}
+                            </button>
+                            <button type="button" class="btn-edit" title="Editar Pago" onclick="editarPagoProveedor('${p.id}')">
+                                ✏️
+                            </button>
+                            <button type="button" class="btn-delete" title="Eliminar Comprobante" onclick="eliminarPagoProveedor('${p.id}')">
+                                🗑️
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function cambiarEstadoPago(id) {
+            const pagos = await obtenerPagosProveedores();
+            const p = pagos.find(x => x.id === id);
+            if (!p) return;
+            
+            if (p.estado === 'Pagado') {
+                p.estado = 'Pendiente';
+            } else {
+                p.estado = 'Pagado';
+                if (!p.fecha_pago) {
+                    p.fecha_pago = new Date().toISOString().split('T')[0];
+                }
+            }
+            await guardarPagosProveedoresEnStorage(pagos);
+            await renderPagosProveedores();
+        }
+
+        async function editarPagoProveedor(id) {
+            const pagos = await obtenerPagosProveedores();
+            const p = pagos.find(x => x.id === id);
+            if (!p) return;
+
+            editPaymentId = p.id;
+            cambiarPantalla('proveedores');
+
+            document.getElementById('payFechaCompra').value = p.fecha_compra || '';
+            document.getElementById('payProveedor').value = p.proveedor || '';
+            document.getElementById('payImporte').value = p.importe || '';
+            document.getElementById('payFormaPago').value = p.forma_pago || 'Efectivo';
+            document.getElementById('payFechaPago').value = p.fecha_pago || '';
+            document.getElementById('payEstado').value = p.estado || 'Pendiente';
+            document.getElementById('payNotas').value = p.notas || '';
+
+            if (p.comprobante_base64) {
+                tempComprobanteBase64 = p.comprobante_base64;
+                mostrarPreviewComprobante(p.comprobante_base64, 'Comprobante guardado');
+            } else {
+                eliminarComprobanteCargado();
+            }
+
+            const btnSubmit = document.getElementById('btnSubmitPago');
+            const btnCancel = document.getElementById('btnCancelPagoEdit');
+            const formTitle = document.getElementById('supplierFormTitle');
+            
+            if (btnSubmit) btnSubmit.innerText = '💾 Actualizar Comprobante / Pago';
+            if (btnCancel) btnCancel.style.display = 'inline-block';
+            if (formTitle) formTitle.querySelector('span').innerText = '✏️ Editando Comprobante de Proveedor';
+
+            document.getElementById('supplierPaymentForm').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function cancelarEdicionPago() {
+            editPaymentId = null;
+            tempComprobanteBase64 = null;
+            const form = document.getElementById('supplierPaymentForm');
+            if (form) form.reset();
+            
+            const fechaHoy = new Date().toISOString().split('T')[0];
+            const fechaInput = document.getElementById('payFechaCompra');
+            if (fechaInput) fechaInput.value = fechaHoy;
+
+            eliminarComprobanteCargado();
+
+            const btnSubmit = document.getElementById('btnSubmitPago');
+            const btnCancel = document.getElementById('btnCancelPagoEdit');
+            const formTitle = document.getElementById('supplierFormTitle');
+
+            if (btnSubmit) btnSubmit.innerText = '💾 Registrar Comprobante / Pago';
+            if (btnCancel) btnCancel.style.display = 'none';
+            if (formTitle) formTitle.querySelector('span').innerText = '🧾 Cargar Comprobante / Pago a Proveedor';
+        }
+
+        async function eliminarPagoProveedor(id) {
+            const pagos = await obtenerPagosProveedores();
+            const p = pagos.find(x => x.id === id);
+            if (!p) return;
+
+            if (!confirm(`¿Seguro que deseas eliminar el comprobante de "${p.proveedor}" por $${p.importe}?`)) return;
+
+            const actualizados = pagos.filter(x => x.id !== id);
+            await guardarPagosProveedoresEnStorage(actualizados);
+
+            if (supabaseClient) {
+                try {
+                    await supabaseClient.from('pagos_proveedores').delete().eq('id', id);
+                } catch (e) {
+                    console.error("Error al eliminar pago en Supabase:", e);
+                }
+            }
+            await renderPagosProveedores();
+        }
+
+        function limpiarFiltrosPagos() {
+            if (document.getElementById('filtroPayProveedor')) document.getElementById('filtroPayProveedor').value = '';
+            if (document.getElementById('filtroPayEstado')) document.getElementById('filtroPayEstado').value = '';
+            if (document.getElementById('filtroPayFechaDesde')) document.getElementById('filtroPayFechaDesde').value = '';
+            if (document.getElementById('filtroPayFechaHasta')) document.getElementById('filtroPayFechaHasta').value = '';
+            renderPagosProveedores();
+        }
+
+        async function abrirModalVerComprobante(source, titulo) {
+            let base64 = source;
+            if (source && !source.startsWith('data:image')) {
+                const pagos = await obtenerPagosProveedores();
+                const p = pagos.find(x => x.id === source);
+                if (p && p.comprobante_base64) {
+                    base64 = p.comprobante_base64;
+                    titulo = `Factura: ${p.proveedor} ($${p.importe})`;
+                }
+            }
+
+            if (!base64) return;
+            const modal = document.getElementById('modalVerComprobante');
+            const img = document.getElementById('modalComprobanteImg');
+            const titleEl = document.getElementById('modalComprobanteTitulo');
+            const downloadBtn = document.getElementById('btnDescargarComprobante');
+
+            if (modal && img) {
+                img.src = base64;
+                if (titleEl) titleEl.textContent = titulo || '📸 Comprobante de Respaldo';
+                if (downloadBtn) {
+                    downloadBtn.href = base64;
+                    downloadBtn.download = `comprobante_${(titulo || 'pago').replace(/\s+/g, '_').toLowerCase()}.jpg`;
+                }
+                modal.style.display = 'flex';
+            }
+        }
+
+        function cerrarModalVerComprobante() {
+            const modal = document.getElementById('modalVerComprobante');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function configurarModuloProveedores() {
+            const form = document.getElementById('supplierPaymentForm');
+            if (form) {
+                form.addEventListener('submit', guardarPagoProveedor);
+            }
+
+            const fechaCompraInput = document.getElementById('payFechaCompra');
+            if (fechaCompraInput) {
+                fechaCompraInput.value = new Date().toISOString().split('T')[0];
+            }
+
+            // Configurar Dropzone de imagen
+            const dropzone = document.getElementById('dropzoneComprobante');
+            const fileInput = document.getElementById('fileComprobante');
+
+            if (fileInput) {
+                fileInput.addEventListener('change', (e) => {
+                    if (e.target.files && e.target.files[0]) {
+                        procesarArchivoComprobante(e.target.files[0]);
+                    }
+                });
+            }
+
+            if (dropzone) {
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dropzone.classList.add('dragover');
+                    }, false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropzone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dropzone.classList.remove('dragover');
+                    }, false);
+                });
+
+                dropzone.addEventListener('drop', (e) => {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    if (files && files.length > 0) {
+                        procesarArchivoComprobante(files[0]);
+                    }
+                }, false);
+            }
+
+            renderProveedoresDropdown();
+            renderPagosProveedores();
         }
 
         /* --- MÓDULO DE DICTADO POR VOZ (NUEVO) --- */
@@ -2616,6 +3535,57 @@
             <div class="form-group" style="display: flex; gap: 10px; margin-top: 20px;">
                 <button onclick="guardarConfigSupabase()" class="btn-submit" style="margin-top: 0; flex: 1; height: 38px; background-color: var(--secondary-color); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Guardar y Conectar</button>
                 <button onclick="cerrarModalConfig()" class="btn-cancel" style="margin-top: 0; flex: 1; height: 38px; background-color: #e2e2e2; color: #333; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE NUEVO PROVEEDOR -->
+    <div id="modalNuevoProveedor" style="display: none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
+        <div class="card" style="width: 90%; max-width: 440px; padding: 25px; border-radius: var(--border-radius); position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.15); background-color: white; margin: 8% auto;">
+            <span onclick="cerrarModalNuevoProveedor()" style="position: absolute; right: 20px; top: 15px; font-size: 1.5rem; font-weight: bold; color: var(--text-muted); cursor: pointer; user-select: none;">&times;</span>
+            <h2 style="font-size: 1.2rem; color: var(--primary-color); margin-bottom: 15px; border-bottom: 2px solid #f1f2f6; padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">🚚 Administrar Proveedores</h2>
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label for="nuevoProveedorNombre" style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem;">Nombre del Proveedor *</label>
+                <input type="text" id="nuevoProveedorNombre" class="form-control" placeholder="Ej: Molino Cañuelas, Distribuidora San Juan" maxlength="100">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label for="nuevoProveedorTelefono" style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem;">Teléfono / Contacto (Opcional)</label>
+                <input type="text" id="nuevoProveedorTelefono" class="form-control" placeholder="Ej: 342 555-1234" maxlength="50">
+            </div>
+
+            <div class="form-group" style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" onclick="guardarNuevoProveedor()" class="btn-submit" style="margin-top: 0; flex: 1; height: 38px; background-color: var(--secondary-color); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Guardar Proveedor</button>
+                <button type="button" onclick="cerrarModalNuevoProveedor()" class="btn-cancel" style="margin-top: 0; flex: 1; height: 38px; background-color: #e2e2e2; color: #333; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Cerrar</button>
+            </div>
+
+            <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                <h4 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Proveedores Registrados:</h4>
+                <div id="listaProveedoresExistentes" style="max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+                    <!-- Lista dinámica con botón de eliminar -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE VISUALIZACIÓN DE COMPROBANTE -->
+    <div id="modalVerComprobante" style="display: none; position: fixed; z-index: 1100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.75); backdrop-filter: blur(2px);" onclick="cerrarModalVerComprobante()">
+        <div class="card" style="width: 90%; max-width: 700px; padding: 20px; border-radius: var(--border-radius); position: relative; box-shadow: 0 6px 25px rgba(0,0,0,0.3); background-color: white; margin: 4% auto; text-align: center;" onclick="event.stopPropagation()">
+            <span onclick="cerrarModalVerComprobante()" style="position: absolute; right: 20px; top: 15px; font-size: 1.6rem; font-weight: bold; color: var(--text-muted); cursor: pointer; user-select: none;">&times;</span>
+            <h3 id="modalComprobanteTitulo" style="font-size: 1.1rem; color: var(--primary-color); margin-bottom: 15px; text-align: left; padding-right: 30px;">📸 Foto de Comprobante</h3>
+            
+            <div style="max-height: 65vh; overflow: auto; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; border-radius: 6px; padding: 10px; border: 1px solid var(--border-color);">
+                <img id="modalComprobanteImg" src="" alt="Comprobante" style="max-width: 100%; max-height: 60vh; object-fit: contain; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+            </div>
+
+            <div style="margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px;">
+                <a id="btnDescargarComprobante" href="#" download="comprobante.jpg" class="btn-submit" style="text-decoration: none; padding: 8px 16px; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 6px; background-color: var(--primary-color); color: white; border-radius: 4px; font-weight: 600;">
+                    📥 Descargar Imagen
+                </a>
+                <button type="button" onclick="cerrarModalVerComprobante()" class="btn-cancel" style="margin-top: 0; padding: 8px 16px; font-size: 0.9rem;">
+                    Cerrar
+                </button>
             </div>
         </div>
     </div>
