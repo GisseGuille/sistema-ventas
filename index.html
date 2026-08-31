@@ -3352,6 +3352,7 @@
         let recognitionIA = null;
         let isRecordingIA = false;
         let productosIAPrevia = [];
+        let fotoTicketIABase64 = null;
 
         function inicializarAsistenteIA() {
             // Verificar si el navegador soporta reconocimiento de voz
@@ -3359,7 +3360,7 @@
             if (!SpeechRecognition) {
                 const btnGrabar = document.getElementById('btnGrabarAudioIA');
                 if (btnGrabar) {
-                    btnGrabar.title = 'Tu navegador no soporta voz. Puedes escribir o pegar texto.';
+                    btnGrabar.title = 'Tu navegador no soporta voz. Puedes usar foto o escribir texto.';
                 }
             }
         }
@@ -3399,9 +3400,75 @@
             alert('¡Clave de Google Gemini guardada con éxito!');
         }
 
+        function procesarFotoTicketIA(input) {
+            const file = input.files?.[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                alert('Por favor selecciona un archivo de imagen válido (JPG, PNG, JPEG, GIF).');
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    // Redimensionar para optimizar envío a la API (max 1600px de ancho/alto)
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 1600;
+
+                    if (width > maxDim || height > maxDim) {
+                        if (width > height) {
+                            height = Math.round((height * maxDim) / width);
+                            width = maxDim;
+                        } else {
+                            width = Math.round((width * maxDim) / height);
+                            height = maxDim;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                    const base64Raw = compressedDataUrl.split(',')[1];
+
+                    fotoTicketIABase64 = {
+                        mimeType: 'image/jpeg',
+                        data: base64Raw
+                    };
+
+                    const previewDiv = document.getElementById('previewFotoTicketIA');
+                    const imgThumb = document.getElementById('imgThumbnailTicketIA');
+                    if (previewDiv && imgThumb) {
+                        imgThumb.src = compressedDataUrl;
+                        previewDiv.style.display = 'flex';
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function eliminarFotoTicketIA() {
+            fotoTicketIABase64 = null;
+            const previewDiv = document.getElementById('previewFotoTicketIA');
+            const imgThumb = document.getElementById('imgThumbnailTicketIA');
+            const input = document.getElementById('fileFotoTicketIA');
+            if (previewDiv) previewDiv.style.display = 'none';
+            if (imgThumb) imgThumb.src = '';
+            if (input) input.value = '';
+        }
+
         function limpiarEntradaIA() {
             const textarea = document.getElementById('txtEntradaIA');
             if (textarea) textarea.value = '';
+            eliminarFotoTicketIA();
             cancelarPreviewIA();
         }
 
@@ -3416,7 +3483,7 @@
         function iniciarGrabacionIA() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
-                alert('Tu navegador no soporta reconocimiento de voz nativo. Puedes escribir o pegar el texto directamente.');
+                alert('Tu navegador no soporta reconocimiento de voz nativo. Puedes usar foto de ticket o escribir texto.');
                 return;
             }
 
@@ -3472,7 +3539,7 @@
             const txt = document.getElementById('txtGrabarIA');
             const icon = document.getElementById('iconGrabarIA');
             if (btn) btn.classList.remove('btn-recording');
-            if (txt) txt.innerText = 'Comenzar a Hablar';
+            if (txt) txt.innerText = 'Hablar';
             if (icon) icon.innerText = '🎙️';
         }
 
@@ -3480,8 +3547,8 @@
             const textarea = document.getElementById('txtEntradaIA');
             const texto = textarea ? textarea.value.trim() : '';
 
-            if (!texto) {
-                alert('Por favor habla por el micrófono o escribe/pega el texto de los productos a cargar.');
+            if (!texto && !fotoTicketIABase64) {
+                alert('Por favor sube una foto de un ticket/factura, habla por el micrófono o escribe el texto de los productos.');
                 if (textarea) textarea.focus();
                 return;
             }
@@ -3507,22 +3574,39 @@
             if (btnProcesar) btnProcesar.disabled = true;
 
             const promptSistema = `Eres un asistente experto para un negocio de alimentos y cocina en Argentina ("Bettina Guille - Cocina").
-Analiza el siguiente texto (que puede ser dictado por voz espontáneo con modismos argentinos o un mensaje de compras/remito) y extrae TODOS los productos mencionados.
+Analiza la información proporcionada (que puede incluir una foto de ticket/factura de compra, audio dictado con modismos argentinos o texto escrito) y extrae TODOS los productos comprados.
 
 Debes responder ÚNICAMENTE con un arreglo JSON válido (sin formato markdown ni etiquetas \`\`\`json).
 
 Cada objeto del arreglo debe tener exactamente esta estructura:
 {
-  "nombre": "Nombre del producto con mayúscula inicial (ej: 'Pata muslo', 'Harina 0000', 'Tomate redondo')",
+  "nombre": "Nombre del producto con mayúscula inicial (ej: 'Pata muslo', 'Harina 0000', 'Tomate redondo', 'Queso cremoso')",
   "categoria": "Categoría exacta deducida entre: 'Almacén', 'verdulería', 'bebidas', 'pollo', 'carbón', 'panadería', 'fiambreria'",
-  "cantidad": número decimal o entero (ej: 'dos kilos y medio' -> 2.5, 'medio kilo' -> 0.5, 'un cuarto' -> 0.25, 'tres' -> 3),
-  "unidad_medida": "Debe ser 'Kilos', 'Gramos' o 'Unidades'. (Si se vende por peso como carnes, verduras o fraccionados usa 'Kilos' o 'Gramos', si son paquetes o unidades usa 'Unidades')",
-  "costo": número decimal o entero con el costo unitario o por kilo (ej: 'tres mil quinientos' -> 3500, '50 lucas' -> 50000). Si no se indica, pon 0,
+  "cantidad": número decimal o entero (ej: 'dos kilos y medio' -> 2.5, 'medio kilo' -> 0.5, 'un cuarto' -> 0.25, 'tres' -> 3, '500g' -> 0.5 si es kilo o 500 si es gramos),
+  "unidad_medida": "Debe ser 'Kilos', 'Gramos' o 'Unidades'. (Para carnes, pollos, frutas o verduras pesadas usa 'Kilos', para fraccionados pequeños en gramos usa 'Gramos', para paquetes/unidades usa 'Unidades')",
+  "costo": número decimal o entero con el costo unitario o por kilo (ej: 3500, 50000). Si el ticket indica el precio unitario úsalo; si solo indica el total de ese renglón, calcula costo_total / cantidad. Si no se indica, pon 0,
   "ganancia": número con el porcentaje de ganancia (ej: '40' para 40%, 'margen del 35' -> 35). Si no se indica, asigna 40 por defecto
-}
+}`;
 
-Texto a analizar:
-"${texto}"`;
+            // Construir contenido multimodal para la API de Gemini
+            const parts = [];
+            if (fotoTicketIABase64) {
+                parts.push({
+                    inline_data: {
+                        mime_type: fotoTicketIABase64.mimeType,
+                        data: fotoTicketIABase64.data
+                    }
+                });
+            }
+
+            let promptTextoCompleto = promptSistema;
+            if (texto) {
+                promptTextoCompleto += `\n\nTexto adicional / notas:\n"${texto}"`;
+            }
+            if (fotoTicketIABase64) {
+                promptTextoCompleto += `\n\n(Revisa minuciosamente la imagen adjunta del ticket o factura, reconociendo cada renglón de producto, peso/cantidad y costo unitario o precio)`;
+            }
+            parts.push({ text: promptTextoCompleto });
 
             try {
                 // Lista de modelos compatibles de Gemini
@@ -3541,7 +3625,7 @@ Texto a analizar:
                                 contents: [
                                     {
                                         role: 'user',
-                                        parts: [{ text: promptSistema }]
+                                        parts: parts
                                     }
                                 ],
                                 generationConfig: {
@@ -3822,21 +3906,35 @@ Texto a analizar:
                 </div>
             </div>
 
-            <!-- Panel de Entrada (Grabación por Voz y Texto) -->
+            <!-- Panel de Entrada (Grabación por Voz, Foto de Ticket y Texto) -->
             <div style="background-color: #f8f9fa; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 18px; margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
                     <label for="txtEntradaIA" style="font-weight: 700; font-size: 0.95rem; color: var(--primary-color); display: flex; align-items: center; gap: 6px;">
-                        <span>🎙️ Dictado por Voz o 📝 Texto</span>
+                        <span>📷 Foto de Ticket, 🎙️ Voz o 📝 Texto</span>
                     </label>
-                    <div style="display: flex; gap: 8px;">
-                        <button type="button" id="btnGrabarAudioIA" onclick="toggleGrabacionIA()" style="background-color: #2980b9; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: all 0.2s;">
-                            <span id="iconGrabarIA">🎙️</span> <span id="txtGrabarIA">Comenzar a Hablar</span>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" onclick="document.getElementById('fileFotoTicketIA').click()" style="background-color: #27ae60; color: white; border: none; padding: 7px 15px; border-radius: 20px; font-size: 0.88rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(39, 174, 96, 0.25); transition: all 0.2s;" title="Tomar foto con la cámara o subir imagen de ticket">
+                            <span>📷 Foto / Ticket</span>
+                        </button>
+                        <input type="file" id="fileFotoTicketIA" accept="image/*" capture="environment" style="display: none;" onchange="procesarFotoTicketIA(this)">
+
+                        <button type="button" id="btnGrabarAudioIA" onclick="toggleGrabacionIA()" style="background-color: #2980b9; color: white; border: none; padding: 7px 15px; border-radius: 20px; font-size: 0.88rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(41, 128, 185, 0.25); transition: all 0.2s;" title="Grabar dictado por voz">
+                            <span id="iconGrabarIA">🎙️</span> <span id="txtGrabarIA">Hablar</span>
                         </button>
                     </div>
                 </div>
 
-                <textarea id="txtEntradaIA" rows="4" class="form-control" style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.95rem; line-height: 1.4; resize: vertical;" placeholder="Ejemplo hablado o escrito:
-'Anotame dos kilos y medio de pata muslo a 3500 el kilo con 40 de ganancia, y cinco maples de huevos a seis mil para ganarle el 35%'"></textarea>
+                <!-- Vista previa de foto de ticket adjunta -->
+                <div id="previewFotoTicketIA" style="display: none; align-items: center; gap: 12px; background-color: #ffffff; border: 1px dashed #27ae60; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px;">
+                    <img id="imgThumbnailTicketIA" src="" alt="Ticket" style="height: 55px; width: 55px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border-color);">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 700; font-size: 0.85rem; color: #27ae60;">📷 Foto de Ticket / Factura adjunta</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">La IA leerá los productos, cantidades y precios directamente de esta imagen.</div>
+                    </div>
+                    <button type="button" onclick="eliminarFotoTicketIA()" style="background: none; border: none; cursor: pointer; font-size: 1.1rem; color: #e74c3c;" title="Quitar foto">🗑️</button>
+                </div>
+
+                <textarea id="txtEntradaIA" rows="3" class="form-control" style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.95rem; line-height: 1.4; resize: vertical;" placeholder="Habla, escribe o sube una foto de tu ticket. También puedes agregar notas aquí (ej: 'ganancia 35% para todo')..."></textarea>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 12px;">
                     <span style="font-size: 0.78rem; color: var(--text-muted);">
