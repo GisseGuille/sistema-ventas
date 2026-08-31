@@ -457,13 +457,14 @@
                 margin-top: 10px;
             }
             .product-form-row-3 {
-                display: flex;
-                gap: 20px;
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr 1.5fr;
+                gap: 15px 20px;
                 margin-top: 10px;
                 align-items: end;
             }
             .product-form-row-3 .form-group {
-                width: 250px;
+                width: auto;
                 margin-bottom: 0;
             }
         /* Estilos del Módulo de Pago a Proveedores */
@@ -767,7 +768,7 @@
                                 >
                             </div>
 
-                            <!-- Cantidad (Campo numérico) -->
+                            <!-- Cantidad (Campo numérico fraccionado/decimal) -->
                             <div class="form-group">
                                 <label for="prodCantidad">Cantidad / Stock</label>
                                 <input 
@@ -775,6 +776,7 @@
                                     id="prodCantidad" 
                                     class="form-control" 
                                     placeholder="0" 
+                                    step="any" 
                                     min="0" 
                                     required
                                 >
@@ -782,6 +784,16 @@
                         </div>
 
                         <div class="product-form-row-3">
+                            <!-- Unidad de Medida (Unidades, Kilos, Gramos) -->
+                            <div class="form-group">
+                                <label for="prodUnidad">Unidad de Medida *</label>
+                                <select id="prodUnidad" class="form-control" required>
+                                    <option value="Unidades" selected>Unidades (un)</option>
+                                    <option value="Kilos">Kilos (kg)</option>
+                                    <option value="Gramos">Gramos (g)</option>
+                                </select>
+                            </div>
+
                             <!-- Fecha de compra (Campo fecha) -->
                             <div class="form-group">
                                 <label for="prodFecha">Fecha de Compra</label>
@@ -841,7 +853,7 @@
                                 <tr>
                                     <th style="cursor: pointer; user-select: none;" onclick="ordenarGrilla('fecha')">Fecha Compra <span id="sort-icon-fecha" style="font-size: 0.8rem; color: #ccc;">↕</span></th>
                                     <th style="cursor: pointer; user-select: none;" onclick="ordenarGrilla('nombre')">Nombre del Producto <span id="sort-icon-nombre" style="font-size: 0.8rem; color: #ccc;">↕</span></th>
-                                    <th style="text-align: center; cursor: pointer; user-select: none;" onclick="ordenarGrilla('cantidad')">Cantidad <span id="sort-icon-cantidad" style="font-size: 0.8rem; color: #ccc;">↕</span></th>
+                                    <th style="text-align: center; cursor: pointer; user-select: none;" onclick="ordenarGrilla('cantidad')">Cant. / Stock <span id="sort-icon-cantidad" style="font-size: 0.8rem; color: #ccc;">↕</span></th>
                                     <th style="text-align: right; cursor: pointer; user-select: none;" onclick="ordenarGrilla('costo')">Costo <span id="sort-icon-costo" style="font-size: 0.8rem; color: #ccc;">↕</span></th>
                                     <th style="text-align: center; cursor: pointer; user-select: none;" onclick="ordenarGrilla('gananciaPorc')">% de ganancia <span id="sort-icon-gananciaPorc" style="font-size: 0.8rem; color: #ccc;">↕</span></th>
                                     <th style="text-align: right; cursor: pointer; user-select: none;" onclick="ordenarGrilla('precio')">Precio <span id="sort-icon-precio" style="font-size: 0.8rem; color: #ccc;">↕</span></th>
@@ -1301,7 +1313,26 @@
             }
         }
 
-        // Inicia el modo de edición precargando los datos del producto en el formulario
+        // Formateador de cantidades para soportar enteros y decimales con su unidad de medida
+        function formatearCantidad(cant, unidad) {
+            const n = Number(cant) || 0;
+            const formattedNum = n % 1 === 0 
+                ? n.toString() 
+                : n.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+            
+            let sufijo = ' un';
+            const u = (unidad || 'Unidades').toLowerCase();
+            if (u.includes('kilo') || u === 'kg') {
+                sufijo = ' kg';
+            } else if (u.includes('gramo') || u === 'g' || u === 'gr') {
+                sufijo = ' g';
+            } else {
+                sufijo = ' un';
+            }
+            return `${formattedNum}${sufijo}`;
+        }
+
+        // Carga los datos de un producto en el formulario para su modificación (Modo Edición)
         async function editarProducto(id) {
             cambiarPantalla('productos'); // Cambiar automáticamente a la pantalla de productos
 
@@ -1324,6 +1355,9 @@
 
             document.getElementById('prodPrecio').value = prod.precio;
             document.getElementById('prodCantidad').value = prod.cantidad;
+            if (document.getElementById('prodUnidad')) {
+                document.getElementById('prodUnidad').value = prod.unidad_medida || 'Unidades';
+            }
             document.getElementById('prodFecha').value = prod.fecha;
             
             // Cargar estado (Activo por defecto si no existe)
@@ -1345,6 +1379,9 @@
             editProductId = null;
             
             document.getElementById('productForm').reset();
+            if (document.getElementById('prodUnidad')) {
+                document.getElementById('prodUnidad').value = 'Unidades';
+            }
             inicializarFecha();
 
             const btnSubmit = document.getElementById('btnSubmit');
@@ -1418,6 +1455,7 @@
             const costoStr = document.getElementById('prodCosto').value.trim();
             const gananciaStr = document.getElementById('prodGanancia').value.trim();
             const cantidadStr = document.getElementById('prodCantidad').value.trim();
+            const unidadMedida = document.getElementById('prodUnidad') ? document.getElementById('prodUnidad').value : 'Unidades';
             const fecha = document.getElementById('prodFecha').value;
             const estado = document.getElementById('prodEstado').value;
 
@@ -1459,8 +1497,8 @@
             // Calcular precio de venta final
             const precio = costo * (1 + (ganancia / 100));
 
-            // Validar opcionalmente cantidad (si viene vacía, por defecto 0)
-            const cantidad = cantidadStr === '' ? 0 : Number(cantidadStr);
+            // Validar opcionalmente cantidad fraccionada/decimal (si viene vacía, por defecto 0)
+            const cantidad = cantidadStr === '' ? 0 : parseFloat(cantidadStr);
             if (isNaN(cantidad) || cantidad < 0) {
                 alert('La cantidad debe ser un número válido mayor o igual a 0.');
                 document.getElementById('prodCantidad').focus();
@@ -1493,6 +1531,7 @@
                     productos[index].ganancia = ganancia;
                     productos[index].precio = precio;
                     productos[index].cantidad = cantidad;
+                    productos[index].unidad_medida = unidadMedida;
                     productos[index].fecha = fecha;
                     productos[index].estado = estado;
 
@@ -1517,6 +1556,7 @@
                     ganancia: ganancia,
                     precio: precio,
                     cantidad: cantidad,
+                    unidad_medida: unidadMedida,
                     fecha: fecha,
                     estado: estado || 'Activo'
                 };
@@ -1719,7 +1759,7 @@
                             ${estadoHTML}
                         </div>
                     </td>
-                    <td style="text-align: center; font-weight: 600;">${prod.cantidad}</td>
+                    <td style="text-align: center; font-weight: 600; font-family: monospace;">${formatearCantidad(prod.cantidad, prod.unidad_medida)}</td>
                     <td style="font-family: monospace; font-weight: 600; text-align: right;">${costoFormateado}</td>
                     <td style="text-align: center; font-weight: 600; color: #555;">${gananciaPorcentaje}</td>
                     <td style="font-family: monospace; font-weight: 600; text-align: right; color: var(--primary-color);">${precioFormateado}</td>
@@ -1814,30 +1854,53 @@
             rowDiv.id = rowId;
 
             // Construir el desplegable de opciones
-            let selectHTML = `<select class="form-control select-sale-product" required onchange="actualizarPreciosVenta()">`;
+            let selectHTML = `<select class="form-control select-sale-product" required onchange="alCambiarProductoVenta(this)">`;
             selectHTML += `<option value="" disabled selected>Elegir producto...</option>`;
             productosConStock.forEach(prod => {
-                selectHTML += `<option value="${prod.id}" data-precio="${prod.precio}" data-stock="${prod.cantidad}">
-                    ${escapeHTML(prod.nombre)} (Stock: ${prod.cantidad} - $${prod.precio})
+                const stockFmt = formatearCantidad(prod.cantidad, prod.unidad_medida);
+                selectHTML += `<option value="${prod.id}" data-precio="${prod.precio}" data-stock="${prod.cantidad}" data-unidad="${prod.unidad_medida || 'Unidades'}">
+                    ${escapeHTML(prod.nombre)} (Stock: ${stockFmt} - $${prod.precio})
                 </option>`;
             });
             selectHTML += `</select>`;
 
             rowDiv.innerHTML = `
                 ${selectHTML}
-                <input 
-                    type="number" 
-                    min="1" 
-                    value="1" 
-                    class="form-control input-sale-qty" 
-                    placeholder="Cant." 
-                    required 
-                    oninput="actualizarPreciosVenta()"
-                >
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <input 
+                        type="number" 
+                        step="any"
+                        min="0.001" 
+                        value="1" 
+                        class="form-control input-sale-qty" 
+                        placeholder="Cant." 
+                        required 
+                        oninput="actualizarPreciosVenta()"
+                        style="width: 85px;"
+                    >
+                    <span class="label-sale-unit" style="font-size: 0.85rem; font-weight: 600; color: var(--primary-color); min-width: 25px;">un</span>
+                </div>
                 <button type="button" class="btn-remove-item" onclick="eliminarFilaVenta('${rowId}')" title="Quitar ítem">❌</button>
             `;
 
             container.appendChild(rowDiv);
+            actualizarPreciosVenta();
+        }
+
+        // Manejador al seleccionar producto en la línea de venta
+        function alCambiarProductoVenta(selectEl) {
+            const row = selectEl.closest('.sale-item-row');
+            if (row) {
+                const selectedOption = selectEl.options[selectEl.selectedIndex];
+                const unidad = selectedOption ? selectedOption.getAttribute('data-unidad') : 'Unidades';
+                const unitLabel = row.querySelector('.label-sale-unit');
+                
+                let unitText = 'un';
+                if (unidad === 'Kilos') unitText = 'kg';
+                else if (unidad === 'Gramos') unitText = 'g';
+                
+                if (unitLabel) unitLabel.textContent = unitText;
+            }
             actualizarPreciosVenta();
         }
 
@@ -1866,7 +1929,7 @@
                 if (select && qtyInput && select.value !== '') {
                     const selectedOption = select.options[select.selectedIndex];
                     const precio = parseFloat(selectedOption.getAttribute('data-precio')) || 0;
-                    const cantidad = parseInt(qtyInput.value, 10) || 0;
+                    const cantidad = parseFloat(qtyInput.value) || 0;
                     total += precio * cantidad;
                 }
             }
@@ -1892,11 +1955,13 @@
                 
                 let valorAunExiste = false;
                 productosConStock.forEach(prod => {
+                    const stockFmt = formatearCantidad(prod.cantidad, prod.unidad_medida);
                     const option = document.createElement('option');
                     option.value = prod.id;
                     option.setAttribute('data-precio', prod.precio);
                     option.setAttribute('data-stock', prod.cantidad);
-                    option.innerText = `${prod.nombre} (Stock: ${prod.cantidad} - $${prod.precio})`;
+                    option.setAttribute('data-unidad', prod.unidad_medida || 'Unidades');
+                    option.innerText = `${prod.nombre} (Stock: ${stockFmt} - $${prod.precio})`;
                     select.appendChild(option);
                     
                     if (prod.id === valorSeleccionado) {
@@ -1912,6 +1977,7 @@
                         option.value = prodOriginal.id;
                         option.setAttribute('data-precio', prodOriginal.precio);
                         option.setAttribute('data-stock', prodOriginal.cantidad);
+                        option.setAttribute('data-unidad', prodOriginal.unidad_medida || 'Unidades');
                         option.innerText = `${prodOriginal.nombre} (Sin Stock - $${prodOriginal.precio})`;
                         option.disabled = true;
                         select.appendChild(option);
@@ -1951,10 +2017,10 @@
                 }
 
                 const prodId = select.value;
-                const cantidad = parseInt(qtyInput.value, 10);
+                const cantidad = parseFloat(qtyInput.value);
 
                 if (isNaN(cantidad) || cantidad <= 0) {
-                    alert('La cantidad ingresada debe ser un número entero mayor a 0.');
+                    alert('La cantidad ingresada debe ser un número válido mayor a 0.');
                     qtyInput.focus();
                     return;
                 }
@@ -1972,7 +2038,9 @@
                 }
 
                 if (cantidad > prodOriginal.cantidad) {
-                    alert(`Stock insuficiente para "${prodOriginal.nombre}". Stock disponible: ${prodOriginal.cantidad}, solicitado: ${cantidad}.`);
+                    const stockFmt = formatearCantidad(prodOriginal.cantidad, prodOriginal.unidad_medida);
+                    const solFmt = formatearCantidad(cantidad, prodOriginal.unidad_medida);
+                    alert(`Stock insuficiente para "${prodOriginal.nombre}". Stock disponible: ${stockFmt}, solicitado: ${solFmt}.`);
                     qtyInput.focus();
                     return;
                 }
@@ -1985,15 +2053,16 @@
                     nombre: prodOriginal.nombre,
                     costo: prodOriginal.costo !== undefined ? prodOriginal.costo : 0,
                     precio: prodOriginal.precio,
-                    cantidad: cantidad
+                    cantidad: cantidad,
+                    unidad_medida: prodOriginal.unidad_medida || 'Unidades'
                 });
             }
 
-            // Descontar stock
+            // Descontar stock con precisión decimal
             itemsVenta.forEach(item => {
                 const prod = productos.find(p => p.id === item.id);
                 if (prod) {
-                    prod.cantidad -= item.cantidad;
+                    prod.cantidad = Math.round((prod.cantidad - item.cantidad) * 1000) / 1000;
                 }
             });
 
@@ -2151,7 +2220,7 @@
             ventasFiltradas.forEach(venta => {
                 venta.productos.forEach(p => {
                     if (!acumulador[p.id]) {
-                        acumulador[p.id] = { nombre: p.nombre, cantidad: 0 };
+                        acumulador[p.id] = { nombre: p.nombre, cantidad: 0, unidad_medida: p.unidad_medida || 'Unidades' };
                     }
                     acumulador[p.id].cantidad += p.cantidad;
                 });
@@ -2173,7 +2242,7 @@
                         li.className = 'ranking-item';
                         li.innerHTML = `
                             <span>${medallas[index] || '•'} <strong>${escapeHTML(prod.nombre)}</strong></span>
-                            <span style="font-weight: 600; color: var(--primary-color);">${prod.cantidad} ${prod.cantidad === 1 ? 'unidad' : 'unidades'}</span>
+                            <span style="font-weight: 600; color: var(--primary-color); font-family: monospace;">${formatearCantidad(prod.cantidad, prod.unidad_medida)}</span>
                         `;
                         rankingContainer.appendChild(li);
                     });
@@ -2242,7 +2311,7 @@
 
                 v.productos.forEach(p => {
                     prodHTML += `<div style="padding: 2px 0;">${escapeHTML(p.nombre)}</div>`;
-                    cantHTML += `<div style="padding: 2px 0; text-align: center; font-weight: 600;">${p.cantidad}</div>`;
+                    cantHTML += `<div style="padding: 2px 0; text-align: center; font-weight: 600; font-family: monospace;">${formatearCantidad(p.cantidad, p.unidad_medida)}</div>`;
                     
                     const subtotal = p.precio * p.cantidad;
                     const subtotalFormateado = new Intl.NumberFormat('es-AR', {
@@ -2439,7 +2508,7 @@
 
                 v.productos.forEach(p => {
                     prodHTML += `<div style="padding: 2px 0;">${escapeHTML(p.nombre)}</div>`;
-                    cantHTML += `<div style="padding: 2px 0; text-align: center; font-weight: 600;">${p.cantidad}</div>`;
+                    cantHTML += `<div style="padding: 2px 0; text-align: center; font-weight: 600; font-family: monospace;">${formatearCantidad(p.cantidad, p.unidad_medida)}</div>`;
                     
                     const subtotal = p.precio * p.cantidad;
                     const subtotalFormateado = new Intl.NumberFormat('es-AR', {
@@ -3305,7 +3374,7 @@
             const fraseNormalizada = normalizarPalabrasNumericas(fraseOriginal);
 
             // Palabras clave normalizadas para buscar límites de nombre
-            const keywords = ['cantidad', 'cant', 'stock', 'unidades', 'costo', 'compra', 'comprado', 'ganancia', 'porcentaje', 'margen', 'rubro', 'categoria', 'tipo'];
+            const keywords = ['cantidad', 'cant', 'stock', 'unidades', 'kilos', 'kilo', 'kg', 'gramos', 'gramo', 'gr', 'costo', 'compra', 'comprado', 'ganancia', 'porcentaje', 'margen', 'rubro', 'categoria', 'tipo'];
             
             let indexPrimerKeyword = fraseNormalizada.length;
 
@@ -3330,11 +3399,30 @@
                 nombre = 'Producto sin nombre';
             }
 
-            // Buscar Cantidad (ej: "cantidad 10" o "cantidad de 10")
+            // Buscar Unidad de Medida
+            let unidad_medida = 'Unidades';
+            if (/\b(kilos?|kg)\b/i.test(fraseNormalizada)) {
+                unidad_medida = 'Kilos';
+            } else if (/\b(gramos?|gramo|gr|g)\b/i.test(fraseNormalizada)) {
+                unidad_medida = 'Gramos';
+            } else if (/\b(unidades?|un|u)\b/i.test(fraseNormalizada)) {
+                unidad_medida = 'Unidades';
+            }
+
+            // Buscar Cantidad (admite enteros y decimales como 1.5, 0.5, "medio kilo", etc.)
             let cantidad = 1;
-            const matchCant = fraseNormalizada.match(/\b(cantidad|cant|stock|unidades)\s*(?:de|del)?\s*(\d+)\b/i);
-            if (matchCant) {
-                cantidad = parseInt(matchCant[2], 10);
+            if (/\bmedio\s+kilo\b/i.test(fraseNormalizada)) {
+                cantidad = 0.5;
+                unidad_medida = 'Kilos';
+            } else if (/\bun\s+kilo\s+y\s+medio\b/i.test(fraseNormalizada)) {
+                cantidad = 1.5;
+                unidad_medida = 'Kilos';
+            } else {
+                const matchCant = fraseNormalizada.match(/\b(?:cantidad|cant|stock|unidades|kilos?|kg|gramos?|gr|g)\s*(?:de|del)?\s*(\d+(?:\.\d+)?)\b/i) ||
+                                  fraseNormalizada.match(/\b(\d+(?:\.\d+)?)\s*(?:kilos?|kg|gramos?|gr|g|unidades?|un|u)\b/i);
+                if (matchCant) {
+                    cantidad = parseFloat(matchCant[1]);
+                }
             }
 
             // Buscar Costo (ej: "costo 100", "costo de 100", "comprado a 100")
@@ -3363,6 +3451,7 @@
             return {
                 nombre,
                 cantidad,
+                unidad_medida,
                 costo,
                 ganancia,
                 categoria
@@ -3464,16 +3553,20 @@
                     const precio = prod.costo * (1 + (prod.ganancia / 100));
 
                     if (indexExistente !== -1) {
-                        // Sumar stock y actualizar costos/precios
-                        productosBD[indexExistente].cantidad += prod.cantidad;
+                        // Sumar stock con precisión decimal y actualizar costos/precios
+                        productosBD[indexExistente].cantidad = Math.round((productosBD[indexExistente].cantidad + prod.cantidad) * 1000) / 1000;
                         productosBD[indexExistente].costo = prod.costo;
                         productosBD[indexExistente].ganancia = prod.ganancia;
                         productosBD[indexExistente].precio = precio;
+                        if (prod.unidad_medida) {
+                            productosBD[indexExistente].unidad_medida = prod.unidad_medida;
+                        }
                         if (prod.categoria !== 'Sin categoría') {
                             productosBD[indexExistente].categoria = prod.categoria;
                         }
                         actualizadosCount++;
-                        resumenProductos.push(`• ${prod.nombre} (Stock sumado +${prod.cantidad}, Costo: $${prod.costo}, Ganancia: ${prod.ganancia}%)`);
+                        const cantFmt = formatearCantidad(prod.cantidad, prod.unidad_medida);
+                        resumenProductos.push(`• ${prod.nombre} (Stock sumado +${cantFmt}, Costo: $${prod.costo}, Ganancia: ${prod.ganancia}%)`);
                     } else {
                         // Crear producto nuevo
                         const fechaHoy = new Date().toISOString().split('T')[0];
@@ -3485,11 +3578,13 @@
                             ganancia: prod.ganancia,
                             precio: precio,
                             cantidad: prod.cantidad,
+                            unidad_medida: prod.unidad_medida || 'Unidades',
                             fecha: fechaHoy,
                             estado: 'Activo'
                         });
                         agregadosCount++;
-                        resumenProductos.push(`• ${prod.nombre} (Nuevo, Cantidad: ${prod.cantidad}, Costo: $${prod.costo}, Ganancia: ${prod.ganancia}%)`);
+                        const cantFmt = formatearCantidad(prod.cantidad, prod.unidad_medida);
+                        resumenProductos.push(`• ${prod.nombre} (Nuevo, Cantidad: ${cantFmt}, Costo: $${prod.costo}, Ganancia: ${prod.ganancia}%)`);
                     }
                 }
             });
