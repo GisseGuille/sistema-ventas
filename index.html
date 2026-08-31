@@ -647,7 +647,7 @@
                                 <tr>
                                     <th style="width: 85px;">Hora</th>
                                     <th>Productos</th>
-                                    <th style="text-align: center; width: 60px;">Cant.</th>
+                                    <th style="text-align: center; width: 90px;">Cant.</th>
                                     <th style="text-align: right; width: 110px;">Total Prod.</th>
                                     <th style="text-align: right; width: 115px;">Total Venta</th>
                                     <th style="text-align: right; width: 115px;">Ganancia Venta</th>
@@ -933,7 +933,7 @@
                                 <tr>
                                     <th style="width: 140px;">Fecha y Hora</th>
                                     <th>Productos</th>
-                                    <th style="text-align: center; width: 60px;">Cant.</th>
+                                    <th style="text-align: center; width: 90px;">Cant.</th>
                                     <th style="text-align: right; width: 110px;">Total Prod.</th>
                                     <th style="text-align: right; width: 115px;">Total Venta</th>
                                     <th style="text-align: right; width: 115px;">Ganancia Venta</th>
@@ -1330,6 +1330,17 @@
                 sufijo = ' un';
             }
             return `${formattedNum}${sufijo}`;
+        }
+
+        // Obtener la unidad de medida de un producto (desde el ítem de venta o consultando el catálogo de productos)
+        function obtenerUnidadProducto(p, productosBD) {
+            if (p.unidad_medida && p.unidad_medida !== 'Unidades') return p.unidad_medida;
+            if (productosBD && productosBD.length > 0) {
+                const idBuscado = p.producto_id || p.id;
+                const prod = productosBD.find(x => x.id === idBuscado || x.nombre.toLowerCase().trim() === (p.nombre || '').toLowerCase().trim());
+                if (prod && prod.unidad_medida) return prod.unidad_medida;
+            }
+            return p.unidad_medida || 'Unidades';
         }
 
         // Carga los datos de un producto en el formulario para su modificación (Modo Edición)
@@ -2148,7 +2159,8 @@
                         nombre: p.nombre,
                         costo: p.costo,
                         precio: p.precio,
-                        cantidad: p.cantidad
+                        cantidad: p.cantidad,
+                        unidad_medida: p.unidad_medida || 'Unidades'
                     }));
 
                     const { error: errorDetalle } = await supabaseClient
@@ -2219,10 +2231,13 @@
             const acumulador = {};
             ventasFiltradas.forEach(venta => {
                 venta.productos.forEach(p => {
-                    if (!acumulador[p.id]) {
-                        acumulador[p.id] = { nombre: p.nombre, cantidad: 0, unidad_medida: p.unidad_medida || 'Unidades' };
+                    const prodKey = p.producto_id || p.id || p.nombre;
+                    const unidad = obtenerUnidadProducto(p, productosBD);
+                    if (!acumulador[prodKey]) {
+                        acumulador[prodKey] = { nombre: p.nombre, cantidad: 0, unidad_medida: unidad };
                     }
-                    acumulador[p.id].cantidad += p.cantidad;
+                    acumulador[prodKey].cantidad += p.cantidad;
+                    acumulador[prodKey].unidad_medida = unidad;
                 });
             });
 
@@ -2310,8 +2325,9 @@
                 let gananciaVentaAcumulada = 0;
 
                 v.productos.forEach(p => {
+                    const unidad = obtenerUnidadProducto(p, productosBD);
                     prodHTML += `<div style="padding: 2px 0;">${escapeHTML(p.nombre)}</div>`;
-                    cantHTML += `<div style="padding: 2px 0; text-align: center; font-weight: 600; font-family: monospace;">${formatearCantidad(p.cantidad, p.unidad_medida)}</div>`;
+                    cantHTML += `<div style="padding: 2px 0; text-align: center; font-weight: 600; font-family: monospace; white-space: nowrap;">${formatearCantidad(p.cantidad, unidad)}</div>`;
                     
                     const subtotal = p.precio * p.cantidad;
                     const subtotalFormateado = new Intl.NumberFormat('es-AR', {
@@ -2507,8 +2523,9 @@
                 let gananciaVentaAcumulada = 0;
 
                 v.productos.forEach(p => {
+                    const unidad = obtenerUnidadProducto(p, productosBD);
                     prodHTML += `<div style="padding: 2px 0;">${escapeHTML(p.nombre)}</div>`;
-                    cantHTML += `<div style="padding: 2px 0; text-align: center; font-weight: 600; font-family: monospace;">${formatearCantidad(p.cantidad, p.unidad_medida)}</div>`;
+                    cantHTML += `<div style="padding: 2px 0; text-align: center; font-weight: 600; font-family: monospace; white-space: nowrap;">${formatearCantidad(p.cantidad, unidad)}</div>`;
                     
                     const subtotal = p.precio * p.cantidad;
                     const subtotalFormateado = new Intl.NumberFormat('es-AR', {
