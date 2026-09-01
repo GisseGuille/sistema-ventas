@@ -1615,29 +1615,65 @@
 
             // Verificar si el producto tiene ventas asociadas
             const ventas = await obtenerVentas();
-            const tieneVentasAsociadas = ventas.some(v => v.productos && v.productos.some(item => item.id === id));
+            const tieneVentasAsociadas = ventas.some(v => v.productos && v.productos.some(item => item.id === id || item.producto_id === id));
 
             if (tieneVentasAsociadas) {
-                // Inactivar el producto si tiene ventas asociadas
-                const index = productos.findIndex(p => p.id === id);
-                if (index !== -1) {
-                    productos[index].estado = 'Inactivo';
-                    await guardarProductosEnStorage(productos);
-                    await renderProductos();
-                    alert('El producto tiene ventas asociadas, no se puede eliminar pero procederemos a su inactivación.');
-                }
-            } else {
-                // Eliminación física si no tiene ventas asociadas
-                if (confirm(`¿Seguro que querés eliminar ${prod.nombre}?`)) {
-                    // Si el producto borrado es el que se estaba editando, cancelamos la edición
-                    if (editProductId === id) {
-                        cancelarEdicion();
+                const accion = confirm(
+                    `El producto "${prod.nombre}" tiene ventas registradas en el historial.\n\n` +
+                    `• Presiona ACEPTAR si deseas marcarlo como "Inactivo" (se ocultará del mostrador de ventas pero se conservarán las estadísticas).\n` +
+                    `• Presiona CANCELAR si deseas ELIMINARLO DEFINITIVAMENTE.`
+                );
+                
+                if (accion) {
+                    // Marcar como Inactivo
+                    const index = productos.findIndex(p => p.id === id);
+                    if (index !== -1) {
+                        productos[index].estado = 'Inactivo';
+                        await guardarProductosEnStorage(productos);
+                        await renderProductos();
+                        alert(`El producto "${prod.nombre}" ahora está Inactivo.`);
                     }
-                    const productosActualizados = productos.filter(p => p.id !== id);
-                    await guardarProductosEnStorage(productosActualizados);
-                    await renderProductos();
+                    return;
+                }
+
+                // Si canceló la inactivación, confirmar borrado permanente
+                const borrarPermanente = confirm(
+                    `⚠️ ¿Confirmas la ELIMINACIÓN PERMANENTE de "${prod.nombre}" de la base de datos?`
+                );
+                if (!borrarPermanente) return;
+
+            } else {
+                if (!confirm(`¿Seguro que deseas eliminar el producto "${prod.nombre}"?`)) {
+                    return;
                 }
             }
+
+            // Eliminación física en localStorage y Supabase
+            if (editProductId === id) {
+                cancelarEdicion();
+            }
+
+            const productosActualizados = productos.filter(p => p.id !== id);
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(productosActualizados));
+
+            if (supabaseClient) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('productos')
+                        .delete()
+                        .eq('id', id);
+                    if (error) {
+                        console.error("Error al eliminar en Supabase:", error);
+                        alert("Aviso: no se pudo eliminar de la nube (" + error.message + "), se eliminó localmente.");
+                    }
+                } catch (err) {
+                    console.error("Error al conectar con Supabase:", err);
+                }
+            }
+
+            await renderProductos();
+            await actualizarDropdownsVenta();
+            alert(`¡Producto "${prod.nombre}" eliminado correctamente!`);
         }
 
         // Renderizar la tabla de productos aplicando filtros
