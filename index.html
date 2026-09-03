@@ -4119,8 +4119,8 @@ Cada objeto del arreglo debe tener exactamente esta estructura:
             parts.push({ text: promptTextoCompleto });
 
             try {
-                // Lista de modelos compatibles de Gemini
-                const modelos = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest', 'gemini-1.5-flash'];
+                // Lista de modelos compatibles de Gemini (ordenados por estabilidad y disponibilidad)
+                const modelos = ['gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-3-flash-preview', 'gemini-flash-latest', 'gemini-2.5-pro'];
                 let response = null;
                 let data = null;
                 let lastError = null;
@@ -4159,7 +4159,13 @@ Cada objeto del arreglo debe tener exactamente esta estructura:
                 }
 
                 if (!data) {
-                    throw new Error(lastError || 'No se pudo conectar con los modelos de Gemini');
+                    let msgAmigable = 'No se pudo conectar con la Inteligencia Artificial de Google Gemini en este momento.';
+                    if (lastError && (lastError.includes('503') || lastError.toLowerCase().includes('demand') || lastError.toLowerCase().includes('temporar'))) {
+                        msgAmigable = 'Los servidores de Google Gemini están experimentando alta demanda momentánea. Por favor, vuelve a presionar "Interpretar con IA" en unos instantes.';
+                    } else if (lastError) {
+                        msgAmigable += '\n\nDetalle: ' + lastError;
+                    }
+                    throw new Error(msgAmigable);
                 }
 
                 const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
@@ -4532,7 +4538,8 @@ Reglas:
 3. Asocia la forma de pago si el usuario dice "efectivo", "transferencia", "mercado pago", "debito", "credito" o "fiado/cuenta corriente".`;
 
             try {
-                const modelos = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest', 'gemini-1.5-flash'];
+                // Lista de modelos compatibles de Gemini (ordenados por estabilidad y disponibilidad)
+                const modelos = ['gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-3-flash-preview', 'gemini-flash-latest', 'gemini-2.5-pro'];
                 let data = null;
                 let lastError = null;
 
@@ -4561,7 +4568,13 @@ Reglas:
                 }
 
                 if (!data) {
-                    throw new Error(lastError || 'No se pudo conectar con Gemini');
+                    let msgAmigable = 'No se pudo conectar con la Inteligencia Artificial de Google Gemini en este momento.';
+                    if (lastError && (lastError.includes('503') || lastError.toLowerCase().includes('demand') || lastError.toLowerCase().includes('temporar'))) {
+                        msgAmigable = 'Los servidores de Google Gemini están experimentando alta demanda momentánea. Por favor, vuelve a presionar "Interpretar con IA" en unos instantes.';
+                    } else if (lastError) {
+                        msgAmigable += '\n\nDetalle: ' + lastError;
+                    }
+                    throw new Error(msgAmigable);
                 }
 
                 const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
