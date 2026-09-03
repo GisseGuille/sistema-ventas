@@ -557,6 +557,8 @@
             margin: 15px 0 25px 0;
         }
         .big-touch-card {
+            background-color: var(--primary-color); /* Negro / Ciruela oscuro del logo */
+            border: 2px solid rgba(255, 255, 255, 0.12);
             border-radius: var(--border-radius);
             padding: 24px 20px;
             color: white;
@@ -565,20 +567,27 @@
             flex-direction: column;
             justify-content: space-between;
             min-height: 145px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.25);
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             user-select: none;
             position: relative;
             overflow: hidden;
-            border: none;
             text-align: left;
+            outline: none;
         }
-        .big-touch-card:hover {
+        .big-touch-card:hover,
+        .big-touch-card:focus,
+        .big-touch-card:focus-visible {
+            background: linear-gradient(135deg, var(--secondary-color), #ad1457) !important; /* Fucsia del logo */
+            border-color: var(--secondary-color) !important;
             transform: translateY(-4px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.22);
+            box-shadow: 0 10px 25px rgba(216, 27, 96, 0.45) !important;
         }
         .big-touch-card:active {
+            background: linear-gradient(135deg, #c2185b, #880e4f) !important;
+            border-color: #c2185b !important;
             transform: scale(0.97);
+            box-shadow: 0 4px 15px rgba(216, 27, 96, 0.5) !important;
         }
         .big-touch-card .card-icon {
             font-size: 2.3rem;
@@ -598,29 +607,50 @@
             font-weight: 500;
             line-height: 1.35;
         }
+        .card-action-pill {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 7px 14px;
+            border-radius: 20px;
+            transition: var(--transition);
+        }
+        .big-touch-card:hover .card-action-pill,
+        .big-touch-card:focus .card-action-pill,
+        .big-touch-card:active .card-action-pill {
+            background: rgba(255, 255, 255, 0.25);
+        }
         .btn-mode-toggle {
-            background-color: white;
-            color: var(--primary-color);
-            border: 2px solid white;
-            padding: 7px 16px;
+            background-color: var(--primary-color);
+            color: rgba(255, 255, 255, 0.85);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            padding: 8px 18px;
             border-radius: 20px;
             font-weight: 700;
             font-size: 0.88rem;
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
             transition: all 0.2s;
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            outline: none;
         }
-        .btn-mode-toggle:hover {
-            background-color: #f1f2f6;
+        .btn-mode-toggle:hover,
+        .btn-mode-toggle:focus {
+            border-color: var(--secondary-color);
+            color: white;
             transform: translateY(-1px);
         }
         .btn-mode-toggle.active-mode {
-            background-color: #27ae60;
-            color: white;
-            border-color: #27ae60;
+            background: linear-gradient(135deg, var(--secondary-color), #ad1457) !important;
+            color: white !important;
+            border-color: var(--secondary-color) !important;
+            box-shadow: 0 4px 15px rgba(216, 27, 96, 0.4) !important;
         }
     </style>
 </head>
@@ -668,61 +698,61 @@
 
             <div class="panel-modo-simple">
                 <!-- Botón 1: Venta por Voz (IA) -->
-                <div class="big-touch-card" onclick="abrirModalVentaVozIA()" style="background: linear-gradient(135deg, #8e44ad, #2980b9);">
+                <div class="big-touch-card" onclick="abrirModalVentaVozIA()" tabindex="0" role="button">
                     <div>
                         <span class="card-icon">🎙️✨</span>
                         <h3 class="card-title">1. Venta por Voz (IA)</h3>
                         <p class="card-subtitle">Dicta lo que vendiste y la Inteligencia Artificial arma la venta y descuenta el stock</p>
                     </div>
-                    <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: 700; background: rgba(255,255,255,0.2); padding: 7px 14px; border-radius: 20px;">
+                    <div class="card-action-pill">
                         <span>🎙️ Tocar para Dictar Venta</span>
                         <span style="font-size: 1.1rem;">👉</span>
                     </div>
                 </div>
 
                 <!-- Botón 2: Cargar Productos (Foto / Voz / IA) -->
-                <div class="big-touch-card" onclick="abrirModalAsistenteIA()" style="background: linear-gradient(135deg, #27ae60, #16a085);">
+                <div class="big-touch-card" onclick="abrirModalAsistenteIA()" tabindex="0" role="button">
                     <div>
                         <span class="card-icon">📷✨</span>
                         <h3 class="card-title">2. Cargar Mercadería</h3>
                         <p class="card-subtitle">Sácale una foto al ticket/factura o dicta los productos comprados</p>
                     </div>
-                    <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: 700; background: rgba(255,255,255,0.2); padding: 7px 14px; border-radius: 20px;">
+                    <div class="card-action-pill">
                         <span>📷 Tocar para Cargar Stock</span>
                         <span style="font-size: 1.1rem;">👉</span>
                     </div>
                 </div>
 
                 <!-- Botón 3: Ventas y Ganancias de Hoy -->
-                <div class="big-touch-card" onclick="cambiarPantalla('reportes'); activarModoCompleto();" style="background: linear-gradient(135deg, #d35400, #f39c12);">
+                <div class="big-touch-card" onclick="cambiarPantalla('reportes'); activarModoCompleto();" tabindex="0" role="button">
                     <div>
                         <span class="card-icon">💰</span>
                         <h3 class="card-title">3. Resumen de Hoy</h3>
-                        <div style="margin-top: 10px; background: rgba(0,0,0,0.18); padding: 10px 14px; border-radius: 8px;">
+                        <div style="margin-top: 10px; background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
                             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.92rem; margin-bottom: 6px;">
                                 <span style="opacity: 0.9;">Total Vendido:</span>
                                 <strong id="kpiSimpleFacturado" style="font-family: monospace; font-size: 1.2rem; color: white;">$0,00</strong>
                             </div>
                             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.92rem;">
                                 <span style="opacity: 0.9;">Ganancia Hoy:</span>
-                                <strong id="kpiSimpleGanancia" style="font-family: monospace; font-size: 1.2rem; color: #a9dfbf;">$0,00</strong>
+                                <strong id="kpiSimpleGanancia" style="font-family: monospace; font-size: 1.2rem; color: #f8bbd0;">$0,00</strong>
                             </div>
                         </div>
                     </div>
-                    <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: 700; background: rgba(255,255,255,0.2); padding: 7px 14px; border-radius: 20px;">
+                    <div class="card-action-pill">
                         <span>📊 Ver Reportes Detallados</span>
                         <span style="font-size: 1.1rem;">👉</span>
                     </div>
                 </div>
 
                 <!-- Botón 4: Sistema Completo (Todas las tablas) -->
-                <div class="big-touch-card" onclick="activarModoCompleto()" style="background: linear-gradient(135deg, #2c3e50, #34495e);">
+                <div class="big-touch-card" onclick="activarModoCompleto()" tabindex="0" role="button">
                     <div>
                         <span class="card-icon">🖥️</span>
                         <h3 class="card-title">4. Sistema Completo</h3>
                         <p class="card-subtitle">Accede a todas las pestañas: productos, proveedores, reportes y caja</p>
                     </div>
-                    <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: 700; background: rgba(255,255,255,0.2); padding: 7px 14px; border-radius: 20px;">
+                    <div class="card-action-pill">
                         <span>🖥️ Abrir Tablas y Menú</span>
                         <span style="font-size: 1.1rem;">👉</span>
                     </div>
@@ -1426,17 +1456,15 @@
 
             if (btnSimple) {
                 btnSimple.classList.add('active-mode');
-                btnSimple.style.background = '#27ae60';
-                btnSimple.style.color = 'white';
-                btnSimple.style.opacity = '1';
-                btnSimple.style.borderColor = '#27ae60';
+                btnSimple.style.background = '';
+                btnSimple.style.color = '';
+                btnSimple.style.borderColor = '';
             }
             if (btnCompleto) {
                 btnCompleto.classList.remove('active-mode');
-                btnCompleto.style.background = 'rgba(255,255,255,0.2)';
-                btnCompleto.style.color = 'white';
-                btnCompleto.style.opacity = '0.85';
-                btnCompleto.style.borderColor = 'rgba(255,255,255,0.4)';
+                btnCompleto.style.background = '';
+                btnCompleto.style.color = '';
+                btnCompleto.style.borderColor = '';
             }
 
             localStorage.setItem('modo_interfaz', 'simple');
@@ -1454,17 +1482,15 @@
 
             if (btnCompleto) {
                 btnCompleto.classList.add('active-mode');
-                btnCompleto.style.background = '#27ae60';
-                btnCompleto.style.color = 'white';
-                btnCompleto.style.opacity = '1';
-                btnCompleto.style.borderColor = '#27ae60';
+                btnCompleto.style.background = '';
+                btnCompleto.style.color = '';
+                btnCompleto.style.borderColor = '';
             }
             if (btnSimple) {
                 btnSimple.classList.remove('active-mode');
-                btnSimple.style.background = 'rgba(255,255,255,0.2)';
-                btnSimple.style.color = 'white';
-                btnSimple.style.opacity = '0.85';
-                btnSimple.style.borderColor = 'rgba(255,255,255,0.4)';
+                btnSimple.style.background = '';
+                btnSimple.style.color = '';
+                btnSimple.style.borderColor = '';
             }
 
             localStorage.setItem('modo_interfaz', 'completo');
