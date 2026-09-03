@@ -624,7 +624,12 @@
 
                 <!-- REGISTRAR VENTA -->
                 <section class="card">
-                    <h2>🛒 Registrar Venta</h2>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                        <h2 style="margin: 0;">🛒 Registrar Venta</h2>
+                        <button type="button" onclick="abrirModalVentaVozIA()" style="background: linear-gradient(135deg, #8e44ad, #2980b9); color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 3px 10px rgba(142, 68, 173, 0.25); transition: all 0.2s;">
+                            <span>🎙️ ✨ Venta por Voz (IA)</span>
+                        </button>
+                    </div>
                     <form id="salesForm">
                         <!-- Contenedor para los ítems de la venta -->
                         <div id="saleItemsContainer">
@@ -3852,6 +3857,435 @@ Cada objeto del arreglo debe tener exactamente esta estructura:
             limpiarEntradaIA();
             cerrarModalAsistenteIA();
         }
+
+        /* --- MÓDULO DE VENTA POR VOZ CON IA (GOOGLE GEMINI) --- */
+
+        let recognitionVentaIA = null;
+        let isRecordingVentaIA = false;
+        let itemsVentaIAPrevia = [];
+
+        function abrirModalVentaVozIA() {
+            const modal = document.getElementById('modalVentaVozIA');
+            if (!modal) return;
+
+            const geminiKey = localStorage.getItem('gemini_api_key') || '';
+            if (!geminiKey) {
+                alert('Para usar el Asistente de Ventas por Voz necesitas configurar tu clave gratuita de Google Gemini (puedes configurarla en la pestaña 📦 Gestión de Productos > ✨ Asistente IA o en ⚙️ Base de Datos).');
+                return;
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function cerrarModalVentaVozIA() {
+            if (isRecordingVentaIA) {
+                detenerGrabacionVentaIA();
+            }
+            const modal = document.getElementById('modalVentaVozIA');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function limpiarEntradaVentaIA() {
+            const textarea = document.getElementById('txtEntradaVentaIA');
+            if (textarea) textarea.value = '';
+            cancelarPreviewVentaIA();
+        }
+
+        function toggleGrabacionVentaIA() {
+            if (isRecordingVentaIA) {
+                detenerGrabacionVentaIA();
+            } else {
+                iniciarGrabacionVentaIA();
+            }
+        }
+
+        function iniciarGrabacionVentaIA() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert('Tu navegador no soporta reconocimiento de voz nativo. Puedes escribir o pegar la venta directamente en el cuadro de texto.');
+                return;
+            }
+
+            if (!recognitionVentaIA) {
+                recognitionVentaIA = new SpeechRecognition();
+                recognitionVentaIA.lang = 'es-AR';
+                recognitionVentaIA.continuous = true;
+                recognitionVentaIA.interimResults = true;
+
+                recognitionVentaIA.onresult = (event) => {
+                    let textoFinal = '';
+                    for (let i = 0; i < event.results.length; i++) {
+                        textoFinal += event.results[i][0].transcript + ' ';
+                    }
+                    const textarea = document.getElementById('txtEntradaVentaIA');
+                    if (textarea) {
+                        textarea.value = textoFinal.trim();
+                    }
+                };
+
+                recognitionVentaIA.onerror = (event) => {
+                    console.error('Error en reconocimiento de voz de venta:', event);
+                    detenerGrabacionVentaIA();
+                };
+
+                recognitionVentaIA.onend = () => {
+                    detenerGrabacionVentaIA();
+                };
+            }
+
+            try {
+                recognitionVentaIA.start();
+                isRecordingVentaIA = true;
+                const btn = document.getElementById('btnGrabarVentaIA');
+                const txt = document.getElementById('txtGrabarVentaIA');
+                const icon = document.getElementById('iconGrabarVentaIA');
+                if (btn) btn.classList.add('btn-recording');
+                if (txt) txt.innerText = 'Escuchando... (Toca para parar)';
+                if (icon) icon.innerText = '🛑';
+            } catch (err) {
+                console.error('No se pudo iniciar reconocimiento de venta:', err);
+            }
+        }
+
+        function detenerGrabacionVentaIA() {
+            if (recognitionVentaIA && isRecordingVentaIA) {
+                try {
+                    recognitionVentaIA.stop();
+                } catch(e) {}
+            }
+            isRecordingVentaIA = false;
+            const btn = document.getElementById('btnGrabarVentaIA');
+            const txt = document.getElementById('txtGrabarVentaIA');
+            const icon = document.getElementById('iconGrabarVentaIA');
+            if (btn) btn.classList.remove('btn-recording');
+            if (txt) txt.innerText = 'Comenzar a Hablar';
+            if (icon) icon.innerText = '🎙️';
+        }
+
+        async function procesarVentaConGeminiIA() {
+            const textarea = document.getElementById('txtEntradaVentaIA');
+            const texto = textarea ? textarea.value.trim() : '';
+
+            if (!texto) {
+                alert('Por favor habla por el micrófono o escribe los productos vendidos.');
+                if (textarea) textarea.focus();
+                return;
+            }
+
+            const geminiKey = localStorage.getItem('gemini_api_key') || '';
+            if (!geminiKey) {
+                alert('Para usar el Asistente IA necesitas ingresar tu clave gratuita de Google Gemini.');
+                return;
+            }
+
+            if (isRecordingVentaIA) {
+                detenerGrabacionVentaIA();
+            }
+
+            const loading = document.getElementById('loadingVentaIA');
+            const seccionPreview = document.getElementById('seccionPreviewVentaIA');
+            const btnProcesar = document.getElementById('btnProcesarVentaIA');
+
+            if (loading) loading.style.display = 'block';
+            if (seccionPreview) seccionPreview.style.display = 'none';
+            if (btnProcesar) btnProcesar.disabled = true;
+
+            const productosBD = await obtenerProductos();
+            const catalogo = productosBD
+                .filter(p => (p.estado || 'Activo') === 'Activo')
+                .map(p => ({
+                    id: p.id,
+                    nombre: p.nombre,
+                    categoria: p.categoria,
+                    precio: p.precio,
+                    costo: p.costo || 0,
+                    stock: p.cantidad,
+                    unidad_medida: p.unidad_medida || 'Unidades'
+                }));
+
+            const promptSistema = `Eres un asistente de punto de venta (POS) para un negocio de alimentos y cocina en Argentina ("Bettina Guille - Cocina").
+Tu trabajo es interpretar un dictado por voz de una venta realizada y mapear cada producto vendido con el catálogo de productos disponibles.
+
+Catálogo disponible:
+${JSON.stringify(catalogo, null, 2)}
+
+Texto dictado:
+"${texto}"
+
+Debes responder ÚNICAMENTE con un objeto JSON válido (sin markdown \`\`\`json) con esta estructura:
+{
+  "cliente": "Nombre del cliente si fue mencionado, o 'Consumidor Final'",
+  "forma_pago": "Uno de: 'Efectivo', 'Transferencia / MP', 'Débito', 'Crédito', 'Cuenta Corriente'. Si no se menciona, usa 'Efectivo'",
+  "items": [
+    {
+      "producto_id": "El 'id' exacto del producto en el catálogo que mejor coincida",
+      "nombre": "El 'nombre' exacto del producto en el catálogo",
+      "cantidad": número decimal o entero vendido (ej: 'dos kilos y medio' -> 2.5, 'medio kilo' -> 0.5, 'un cuarto' -> 0.25, 'tres' -> 3, '500g' -> 0.5 si la unidad es Kilos o 500 si es Gramos),
+      "unidad_medida": "La unidad del catálogo ('Kilos', 'Gramos' o 'Unidades')",
+      "precio_unitario": número con el precio del catálogo,
+      "costo": número con el costo del catálogo
+    }
+  ]
+}
+
+Reglas:
+1. Solo incluye ítems que coincidan con algún producto del catálogo.
+2. Si el producto se vende por peso (Kilos/Gramos), respeta la unidad_medida del catálogo y convierte adecuadamente las fracciones argentinas.
+3. Asocia la forma de pago si el usuario dice "efectivo", "transferencia", "mercado pago", "debito", "credito" o "fiado/cuenta corriente".`;
+
+            try {
+                const modelos = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest', 'gemini-1.5-flash'];
+                let data = null;
+                let lastError = null;
+
+                for (const modelo of modelos) {
+                    try {
+                        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${geminiKey}`;
+                        const res = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [{ role: 'user', parts: [{ text: promptSistema }] }],
+                                generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
+                            })
+                        });
+
+                        if (res.ok) {
+                            data = await res.json();
+                            break;
+                        } else {
+                            const errData = await res.json().catch(() => ({}));
+                            lastError = errData.error?.message || `Error ${res.status}`;
+                        }
+                    } catch (e) {
+                        lastError = e.message;
+                    }
+                }
+
+                if (!data) {
+                    throw new Error(lastError || 'No se pudo conectar con Gemini');
+                }
+
+                const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+                const cleanedText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+                const ventaParsed = JSON.parse(cleanedText);
+
+                if (!ventaParsed.items || ventaParsed.items.length === 0) {
+                    alert('No pudimos asociar ningún producto del catálogo con lo dictado. Revisa que los nombres coincidan con los productos cargados en el inventario.');
+                    return;
+                }
+
+                // Complementar datos con el catálogo real para máxima consistencia
+                itemsVentaIAPrevia = ventaParsed.items.map(item => {
+                    const prodBD = catalogo.find(p => p.id === item.producto_id) || catalogo.find(p => p.nombre.toLowerCase().trim() === (item.nombre || '').toLowerCase().trim());
+                    const precio = prodBD ? prodBD.precio : (Number(item.precio_unitario) || 0);
+                    const costo = prodBD ? prodBD.costo : (Number(item.costo) || 0);
+                    const id = prodBD ? prodBD.id : item.producto_id;
+                    const nombre = prodBD ? prodBD.nombre : item.nombre;
+                    const unidad = prodBD ? prodBD.unidad_medida : (item.unidad_medida || 'Unidades');
+                    const cantidad = Number(item.cantidad) || 1;
+                    const stock = prodBD ? prodBD.stock : 0;
+
+                    return {
+                        id,
+                        producto_id: id,
+                        nombre,
+                        cantidad,
+                        unidad_medida: unidad,
+                        precio,
+                        costo,
+                        subtotal: precio * cantidad,
+                        stock
+                    };
+                });
+
+                // Setear cliente y forma de pago
+                const clienteInput = document.getElementById('previewVentaCliente');
+                const formaPagoSelect = document.getElementById('previewVentaFormaPago');
+                if (clienteInput) clienteInput.value = ventaParsed.cliente || 'Consumidor Final';
+                if (formaPagoSelect && ventaParsed.forma_pago) {
+                    for (let opt of formaPagoSelect.options) {
+                        if (opt.value.toLowerCase().includes(ventaParsed.forma_pago.toLowerCase())) {
+                            formaPagoSelect.value = opt.value;
+                            break;
+                        }
+                    }
+                }
+
+                renderizarTablaPreviaVentaIA();
+
+            } catch (err) {
+                console.error('Error al procesar venta con Gemini:', err);
+                alert('Error al comunicarse con la Inteligencia Artificial:\n' + err.message);
+            } finally {
+                if (loading) loading.style.display = 'none';
+                if (btnProcesar) btnProcesar.disabled = false;
+            }
+        }
+
+        function renderizarTablaPreviaVentaIA() {
+            const tbody = document.getElementById('tablaPreviewVentaIABody');
+            const seccion = document.getElementById('seccionPreviewVentaIA');
+            const totalLabel = document.getElementById('previewVentaTotalLabel');
+
+            if (!tbody || !seccion) return;
+
+            tbody.innerHTML = '';
+
+            if (itemsVentaIAPrevia.length === 0) {
+                seccion.style.display = 'none';
+                return;
+            }
+
+            let total = 0;
+
+            itemsVentaIAPrevia.forEach((item, index) => {
+                const subtotal = item.precio * item.cantidad;
+                item.subtotal = subtotal;
+                total += subtotal;
+
+                const tr = document.createElement('tr');
+                const stockInsuficiente = item.cantidad > item.stock;
+                if (stockInsuficiente) {
+                    tr.style.backgroundColor = '#ffebee';
+                }
+
+                const cantFmt = formatearCantidad(item.cantidad, item.unidad_medida);
+                const stockFmt = formatearCantidad(item.stock, item.unidad_medida);
+
+                tr.innerHTML = `
+                    <td style="padding: 8px;">
+                        <div style="font-weight: 600; color: var(--primary-color);">${escapeHTML(item.nombre)}</div>
+                        <small style="font-size: 0.75rem; color: ${stockInsuficiente ? '#c0392b; font-weight: 700;' : 'var(--text-muted)'};">
+                            Stock disponible: ${stockFmt} ${stockInsuficiente ? '(⚠️ Stock insuficiente)' : ''}
+                        </small>
+                    </td>
+                    <td style="padding: 8px; text-align: center;">
+                        <input type="number" step="any" min="0" value="${item.cantidad}" class="form-control" style="width: 85px; text-align: center; font-size: 0.88rem; display: inline-block;" oninput="actualizarCantidadPreviaVentaIA(${index}, parseFloat(this.value) || 0)">
+                        <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-muted); display: block;">${escapeHTML(item.unidad_medida)}</span>
+                    </td>
+                    <td style="padding: 8px; text-align: right; font-family: monospace; font-weight: 600;">
+                        $${item.precio.toFixed(2)}
+                    </td>
+                    <td style="padding: 8px; text-align: right; font-family: monospace; font-weight: 700; color: var(--primary-color);">
+                        $${subtotal.toFixed(2)}
+                    </td>
+                    <td style="padding: 8px; text-align: center;">
+                        <button type="button" onclick="eliminarFilaPreviaVentaIA(${index})" style="background: none; border: none; cursor: pointer; font-size: 1rem;" title="Quitar ítem">❌</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if (totalLabel) {
+                totalLabel.innerText = new Intl.NumberFormat('es-AR', {
+                    style: 'currency',
+                    currency: 'ARS'
+                }).format(total);
+            }
+
+            seccion.style.display = 'block';
+            seccion.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function actualizarCantidadPreviaVentaIA(index, nuevaCantidad) {
+            if (itemsVentaIAPrevia[index]) {
+                itemsVentaIAPrevia[index].cantidad = nuevaCantidad;
+                itemsVentaIAPrevia[index].subtotal = itemsVentaIAPrevia[index].precio * nuevaCantidad;
+                renderizarTablaPreviaVentaIA();
+            }
+        }
+
+        function eliminarFilaPreviaVentaIA(index) {
+            itemsVentaIAPrevia.splice(index, 1);
+            renderizarTablaPreviaVentaIA();
+        }
+
+        function cancelarPreviewVentaIA() {
+            itemsVentaIAPrevia = [];
+            const seccion = document.getElementById('seccionPreviewVentaIA');
+            if (seccion) seccion.style.display = 'none';
+        }
+
+        async function confirmarVentaVozIA() {
+            if (!itemsVentaIAPrevia || itemsVentaIAPrevia.length === 0) {
+                alert('No hay productos en la venta.');
+                return;
+            }
+
+            const productosBD = await obtenerProductos();
+
+            // Validar stock de todos los ítems antes de proceder
+            for (const item of itemsVentaIAPrevia) {
+                if (item.cantidad <= 0) {
+                    alert(`La cantidad para "${item.nombre}" debe ser mayor a 0.`);
+                    return;
+                }
+                const prodOriginal = productosBD.find(p => p.id === item.id);
+                if (!prodOriginal) {
+                    alert(`El producto "${item.nombre}" ya no existe en el catálogo.`);
+                    return;
+                }
+                if (item.cantidad > prodOriginal.cantidad) {
+                    const stockFmt = formatearCantidad(prodOriginal.cantidad, prodOriginal.unidad_medida);
+                    const solFmt = formatearCantidad(item.cantidad, item.unidad_medida);
+                    alert(`Stock insuficiente para "${prodOriginal.nombre}". Stock disponible: ${stockFmt}, solicitado: ${solFmt}.`);
+                    return;
+                }
+            }
+
+            // Descontar stock con precisión decimal
+            let totalVenta = 0;
+            const itemsFinales = [];
+
+            itemsVentaIAPrevia.forEach(item => {
+                const prod = productosBD.find(p => p.id === item.id);
+                if (prod) {
+                    prod.cantidad = Math.round((prod.cantidad - item.cantidad) * 1000) / 1000;
+                }
+                totalVenta += item.precio * item.cantidad;
+                itemsFinales.push({
+                    id: item.id,
+                    producto_id: item.id,
+                    nombre: item.nombre,
+                    costo: item.costo,
+                    precio: item.precio,
+                    cantidad: item.cantidad,
+                    unidad_medida: item.unidad_medida
+                });
+            });
+
+            // Guardar stock actualizado
+            await guardarProductosEnStorage(productosBD);
+
+            const cliente = document.getElementById('previewVentaCliente') ? document.getElementById('previewVentaCliente').value.trim() || 'Consumidor Final' : 'Consumidor Final';
+            const formaPago = document.getElementById('previewVentaFormaPago') ? document.getElementById('previewVentaFormaPago').value : 'Efectivo';
+
+            const nuevaVenta = {
+                id: 'sale-' + Date.now(),
+                fecha: new Date().toISOString(),
+                productos: itemsFinales,
+                total: totalVenta,
+                cliente: cliente,
+                forma_pago: formaPago
+            };
+
+            await guardarVentaEnStorage(nuevaVenta);
+            await renderProductos();
+            await actualizarReportes();
+            await renderVentasDelDia();
+
+            const totalFmt = new Intl.NumberFormat('es-AR', {
+                style: 'currency',
+                currency: 'ARS'
+            }).format(totalVenta);
+
+            alert(`✨ ¡Venta por Voz registrada con éxito!\n\n• Total: ${totalFmt}\n• Forma de pago: ${formaPago}\n• Cliente: ${cliente}\n\nEl stock ha sido descontado correctamente.`);
+
+            cancelarPreviewVentaIA();
+            limpiarEntradaVentaIA();
+            cerrarModalVentaVozIA();
+        }
     </script>
     <!-- MODAL DE CONFIGURACIÓN DE BASE DE DATOS (SUPABASE) -->
     <div id="modalConfig" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
@@ -4000,6 +4434,109 @@ Cada objeto del arreglo debe tener exactamente esta estructura:
                     </button>
                     <button type="button" onclick="confirmarGuardadoProductosIA()" class="btn-submit" style="margin-top: 0; background-color: #27ae60; padding: 10px 24px; font-weight: 700; font-size: 1rem; box-shadow: 0 3px 10px rgba(39, 174, 96, 0.3);">
                         💾 Confirmar y Guardar Todos
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE ASISTENTE DE VENTA POR VOZ (IA) -->
+    <div id="modalVentaVozIA" style="display: none; position: fixed; z-index: 1060; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.65); backdrop-filter: blur(2px);">
+        <div class="card" style="width: 92%; max-width: 800px; padding: 25px; border-radius: var(--border-radius); position: relative; box-shadow: 0 6px 30px rgba(0,0,0,0.25); background-color: white; margin: 3% auto;">
+            <span onclick="cerrarModalVentaVozIA()" style="position: absolute; right: 20px; top: 15px; font-size: 1.6rem; font-weight: bold; color: var(--text-muted); cursor: pointer; user-select: none;">&times;</span>
+            
+            <div style="display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #f1f2f6; padding-bottom: 12px; margin-bottom: 15px;">
+                <span style="font-size: 1.8rem;">🎙️</span>
+                <div>
+                    <h2 style="font-size: 1.3rem; color: var(--primary-color); margin: 0;">Asistente de Venta por Voz (IA)</h2>
+                    <p style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">Dicta lo vendido con lenguaje cotidiano. Gemini reconocerá los productos del catálogo, calculará los totales y descontará el stock automáticamente.</p>
+                </div>
+            </div>
+
+            <!-- Panel de Entrada de Voz -->
+            <div style="background-color: #f8f9fa; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 18px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                    <label for="txtEntradaVentaIA" style="font-weight: 700; font-size: 0.95rem; color: var(--primary-color); display: flex; align-items: center; gap: 6px;">
+                        <span>🎙️ Dictado de Venta</span>
+                    </label>
+                    <button type="button" id="btnGrabarVentaIA" onclick="toggleGrabacionVentaIA()" style="background-color: #2980b9; color: white; border: none; padding: 8px 18px; border-radius: 20px; font-size: 0.9rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: all 0.2s;">
+                        <span id="iconGrabarVentaIA">🎙️</span> <span id="txtGrabarVentaIA">Comenzar a Hablar</span>
+                    </button>
+                </div>
+
+                <textarea id="txtEntradaVentaIA" rows="3" class="form-control" style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.95rem; line-height: 1.4; resize: vertical;" placeholder="Ejemplos hablados o escritos:
+• 'Vendí dos kilos y medio de pata muslo y tres maples de huevos en efectivo a Juan'
+• 'Medio kilo de jamón cocido y dos cocas de litro y medio por transferencia'"></textarea>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 12px;">
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">
+                        💡 <em>Tip: Menciona las cantidades, productos, cliente y método de pago si lo deseas.</em>
+                    </span>
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" onclick="limpiarEntradaVentaIA()" class="btn-cancel" style="margin-top: 0; padding: 8px 14px; font-size: 0.85rem;">
+                            Limpiar
+                        </button>
+                        <button type="button" id="btnProcesarVentaIA" onclick="procesarVentaConGeminiIA()" class="btn-submit" style="margin-top: 0; background: linear-gradient(135deg, #8e44ad, #2980b9); color: white; font-weight: 700; padding: 8px 20px; font-size: 0.95rem; border: none; border-radius: 4px; box-shadow: 0 3px 10px rgba(41, 128, 185, 0.3); display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <span>✨ Interpretar Venta</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Animación de Carga -->
+            <div id="loadingVentaIA" style="display: none; text-align: center; padding: 25px; background-color: #fdfefe; border-radius: 8px; border: 1px dashed #2980b9; margin-bottom: 20px;">
+                <div style="font-size: 2.2rem; margin-bottom: 8px;">🧠✨</div>
+                <div style="font-weight: 700; color: var(--primary-color); font-size: 1rem;">La Inteligencia Artificial está armando tu venta...</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Cruzando los productos dictados con el catálogo y calculando subtotales.</div>
+            </div>
+
+            <!-- Vista Previa de la Venta Detectada -->
+            <div id="seccionPreviewVentaIA" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; background-color: #eaf2f8; padding: 10px 14px; border-radius: 6px;">
+                    <div>
+                        <span style="font-size: 0.85rem; color: #555; font-weight: 600;">Cliente:</span>
+                        <input type="text" id="previewVentaCliente" class="form-control" style="display: inline-block; width: auto; min-width: 140px; padding: 4px 8px; font-size: 0.85rem; margin-left: 6px;" value="Consumidor Final">
+                    </div>
+                    <div>
+                        <span style="font-size: 0.85rem; color: #555; font-weight: 600;">Forma de Pago:</span>
+                        <select id="previewVentaFormaPago" class="form-control" style="display: inline-block; width: auto; padding: 4px 8px; font-size: 0.85rem; margin-left: 6px;">
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Transferencia / MP">Transferencia / Mercado Pago</option>
+                            <option value="Débito">Tarjeta de Débito</option>
+                            <option value="Crédito">Tarjeta de Crédito</option>
+                            <option value="Cuenta Corriente">Cuenta Corriente (Fiado)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius); margin-bottom: 15px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+                        <thead style="position: sticky; top: 0; background-color: #f8f9fa; z-index: 10;">
+                            <tr>
+                                <th>Producto</th>
+                                <th style="width: 90px; text-align: center;">Cantidad</th>
+                                <th style="width: 110px; text-align: right;">Precio Unit.</th>
+                                <th style="width: 110px; text-align: right;">Subtotal</th>
+                                <th style="width: 40px; text-align: center;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaPreviewVentaIABody">
+                            <!-- Filas dinámicas -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; background-color: #f1f2f6; padding: 12px 18px; border-radius: 6px; margin-bottom: 15px;">
+                    <span style="font-weight: 700; font-size: 1.1rem; color: var(--primary-color);">Total Venta:</span>
+                    <span id="previewVentaTotalLabel" style="font-size: 1.5rem; font-weight: 800; color: var(--primary-color); font-family: monospace;">$0,00</span>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap;">
+                    <button type="button" onclick="cancelarPreviewVentaIA()" class="btn-cancel" style="margin-top: 0; padding: 10px 18px;">
+                        Descartar
+                    </button>
+                    <button type="button" id="btnConfirmarVentaIA" onclick="confirmarVentaVozIA()" class="btn-submit" style="margin-top: 0; background-color: #27ae60; padding: 10px 24px; font-weight: 700; font-size: 1rem; box-shadow: 0 3px 10px rgba(39, 174, 96, 0.3);">
+                        💾 Confirmar Venta y Descontar Stock
                     </button>
                 </div>
             </div>
