@@ -10,15 +10,26 @@
     <style>
         /* Estilos Globales y Variables de Diseño */
         :root {
-            --primary-color: #32252a; /* Ciruela/Carbón oscuro elegante del logo */
-            --secondary-color: #d81b60; /* Rosa/Magenta vibrante de la acuarela del logo */
-            --bg-color: #f8f9fa; /* Fondo gris muy claro */
+            --primary-color: #20161b; /* Ciruela / Carbón oscuro elegante del logo */
+            --primary-light: #32252a;
+            --secondary-color: #d81b60; /* Fucsia / Magenta vibrante del logo */
+            --secondary-hover: #ad1457;
+            --bg-color: #f4f5f8; /* Fondo gris moderno y limpio */
             --card-bg: #ffffff; /* Fondo blanco para contenedores */
-            --text-color: #333333; /* Texto principal */
-            --text-muted: #7f8c8d; /* Texto secundario/desvanecido */
-            --border-color: #dcdde1; /* Color de bordes */
-            --border-radius: 8px; /* Bordes redondeados consistentes */
-            --transition: all 0.3s ease;
+            --text-color: #2c3e50; /* Texto principal */
+            --text-muted: #64748b; /* Texto secundario / desvanecido */
+            --border-color: #e2e8f0; /* Color de bordes */
+            --border-radius: 12px; /* Bordes redondeados consistentes */
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html, body {
+            width: 100%;
+            max-width: 100vw;
+            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+            -webkit-text-size-adjust: 100%;
         }
 
         * {
@@ -28,40 +39,19 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            line-height: 1.6;
-            padding: 20px;
+            line-height: 1.5;
+            padding: 14px 16px;
         }
 
         /* Contenedor Principal */
         .container {
+            width: 100%;
             max-width: 1000px;
             margin: 0 auto;
-        }
-
-        /* 1) Encabezado */
-        header {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 20px 30px;
-            border-radius: var(--border-radius);
-            margin-bottom: 30px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-
-        header h1 {
-            font-size: 2.2rem;
-            margin-bottom: 5px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-
-        header p {
-            font-size: 1rem;
-            color: rgba(255, 255, 255, 0.8);
+            overflow-x: hidden;
         }
 
         /* Secciones del Sistema - Pestañas */
@@ -70,40 +60,74 @@
         }
 
         /* Barra de Pestañas de Navegación */
-        .nav-tabs {
+        .nav-tabs-wrapper {
             display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin: 25px 0;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin: 15px 0 20px 0;
             flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .nav-tabs-grid {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            flex: 1;
         }
 
         .tab-button {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 1rem;
-            font-weight: 600;
-            border-radius: 4px;
+            background-color: #20161b;
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 10px 18px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            border-radius: 10px;
             cursor: pointer;
             transition: var(--transition);
-            opacity: 0.8;
+            opacity: 0.9;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            box-shadow: var(--shadow-sm);
+            gap: 6px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .tab-button:hover {
+        .tab-button:hover,
+        .tab-button:focus {
             opacity: 1;
-            transform: translateY(-1px);
+            border-color: #d81b60;
+            color: white;
         }
 
         .tab-button.active {
             opacity: 1;
-            background-color: var(--secondary-color);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(135deg, #d81b60, #ad1457) !important;
+            border-color: #ff4081 !important;
+            box-shadow: 0 4px 14px rgba(216, 27, 96, 0.45);
+        }
+
+        .btn-config-db {
+            border: 1px solid var(--border-color);
+            padding: 8px 14px;
+            cursor: pointer;
+            font-size: 0.88rem;
+            color: var(--text-color);
+            background: #ffffff;
+            border-radius: 10px;
+            transition: var(--transition);
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-config-db:hover {
+            background: #f1f2f6;
+            border-color: var(--secondary-color);
         }
 
         /* Contenedores de Pantalla */
@@ -118,12 +142,12 @@
         .tab-content.active.productos-grid {
             display: flex;
             flex-direction: column;
-            gap: 30px;
+            gap: 20px;
         }
 
         /* Diseños específicos de pantallas */
         .single-card-layout {
-            max-width: 800px;
+            max-width: 850px;
             margin: 0 auto;
         }
 
@@ -131,32 +155,34 @@
         .card {
             background-color: var(--card-bg);
             border-radius: var(--border-radius);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
             border: 1px solid var(--border-color);
-            padding: 25px;
+            padding: 20px;
+            margin-bottom: 20px;
         }
 
         .card h2 {
-            font-size: 1.4rem;
+            font-size: 1.25rem;
             color: var(--primary-color);
-            margin-bottom: 20px;
-            padding-bottom: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
             border-bottom: 2px solid #f1f2f6;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            font-weight: 800;
         }
 
-        /* 2) Formulario "Cargar producto" */
+        /* 2) Formularios */
         .form-group {
-            margin-bottom: 18px;
+            margin-bottom: 15px;
         }
 
         .form-group label {
             display: block;
             margin-bottom: 6px;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             color: var(--primary-color);
         }
 
@@ -165,16 +191,15 @@
             padding: 10px 12px;
             font-size: 0.95rem;
             border: 1px solid var(--border-color);
-            border-radius: 4px;
-            background-color: #fafafa;
+            border-radius: 8px;
+            background-color: #ffffff;
             transition: var(--transition);
         }
 
         .form-control:focus {
             outline: none;
             border-color: var(--secondary-color);
-            background-color: #ffffff;
-            box-shadow: 0 0 0 3px rgba(24, 188, 156, 0.15);
+            box-shadow: 0 0 0 3px rgba(216, 27, 96, 0.15);
         }
 
         /* Campo de texto grande para nombre con indicador de límite */
@@ -189,52 +214,70 @@
             margin-top: 4px;
         }
 
-        /* Botón de envío (deshabilitado o estático por ahora) */
+        /* Botón de envío con estética Fucsia del logo */
         .btn-submit {
-            display: block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             width: 100%;
-            padding: 12px;
-            background-color: var(--secondary-color);
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #d81b60, #ad1457);
             color: white;
             border: none;
-            border-radius: 4px;
-            font-size: 1rem;
-            font-weight: 600;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 700;
             cursor: pointer;
             transition: var(--transition);
-            margin-top: 10px;
+            box-shadow: 0 4px 14px rgba(216, 27, 96, 0.35);
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .btn-submit:hover {
-            background-color: #148f77;
+        .btn-submit:hover,
+        .btn-submit:focus {
+            background: linear-gradient(135deg, #e91e63, #c2185b);
+            box-shadow: 0 6px 18px rgba(216, 27, 96, 0.5);
             transform: translateY(-1px);
         }
 
+        .btn-submit:active {
+            transform: scale(0.98);
+        }
+
         .btn-cancel {
-            display: block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             width: 100%;
-            padding: 12px;
-            background-color: #95a5a6;
-            color: white;
+            padding: 11px 18px;
+            background-color: #e2e8f0;
+            color: #475569;
             border: none;
-            border-radius: 4px;
-            font-size: 1rem;
-            font-weight: 600;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            font-weight: 700;
             cursor: pointer;
             transition: var(--transition);
-            margin-top: 10px;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
             text-align: center;
         }
 
         .btn-cancel:hover {
-            background-color: #7f8c8d;
-            transform: translateY(-1px);
+            background-color: #cbd5e1;
+            color: #1e293b;
         }
 
-        /* 3) Listado "Productos" (Vacío) */
+        /* 3) Tablas y Elementos de Listado */
         .table-responsive {
             width: 100%;
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: #ffffff;
         }
 
         table {
@@ -244,18 +287,18 @@
         }
 
         th {
-            background-color: #f1f2f6;
-            color: var(--primary-color);
-            font-weight: 600;
-            padding: 12px 15px;
-            font-size: 0.9rem;
-            border-bottom: 2px solid var(--border-color);
+            background-color: #20161b;
+            color: #ffffff;
+            font-weight: 700;
+            padding: 11px 14px;
+            font-size: 0.88rem;
+            border-bottom: 2px solid #d81b60;
         }
 
         td {
-            padding: 12px 15px;
+            padding: 11px 14px;
             border-bottom: 1px solid #f1f2f6;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
         }
 
         .btn-delete {
@@ -781,7 +824,140 @@
             flex-wrap: wrap;
         }
 
+        /* Modales Unificados con Estética de Marca */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            background-color: rgba(15, 10, 13, 0.78);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            box-sizing: border-box;
+        }
+
+        .modal-dialog-card {
+            width: 100%;
+            max-width: 650px;
+            max-height: 90vh;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+            border: 2px solid #20161b;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-sizing: border-box;
+            position: relative;
+            margin: auto;
+        }
+
+        .modal-dialog-header {
+            background-color: #20161b;
+            color: #ffffff;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            border-bottom: 3px solid #d81b60;
+        }
+
+        .modal-dialog-header h2,
+        .modal-dialog-header h3 {
+            margin: 0;
+            font-size: 1.15rem;
+            color: #ffffff !important;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 800;
+            padding: 0;
+            border: none;
+        }
+
+        .modal-close-btn {
+            background: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        .modal-close-btn:hover {
+            background: #d81b60;
+        }
+
+        .modal-dialog-body {
+            padding: 18px 16px;
+            overflow-y: auto;
+            flex: 1;
+            -webkit-overflow-scrolling: touch;
+            box-sizing: border-box;
+        }
+
+        .modal-dialog-footer {
+            padding: 12px 16px;
+            background-color: #f8f9fa;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-shrink: 0;
+            box-sizing: border-box;
+            flex-wrap: wrap;
+        }
+
+        /* Indicadores Diarios de Ventas */
+        .daily-kpis-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
         /* Ajustes específicos para móviles */
+        @media (max-width: 768px) {
+            .nav-tabs-wrapper {
+                flex-direction: column;
+                gap: 8px;
+                margin: 10px 0 15px 0;
+            }
+            .nav-tabs-grid {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 8px !important;
+                width: 100% !important;
+            }
+            .tab-button {
+                width: 100% !important;
+                padding: 10px 6px !important;
+                font-size: 0.82rem !important;
+                justify-content: center !important;
+                text-align: center !important;
+                border-radius: 10px !important;
+                min-height: 44px !important;
+            }
+            .btn-config-db {
+                width: 100%;
+                justify-content: center;
+                padding: 7px 10px;
+                font-size: 0.82rem;
+            }
+        }
+
         @media (max-width: 600px) {
             body {
                 padding: 8px 8px;
@@ -821,6 +997,38 @@
                 justify-content: center;
                 padding: 7px 8px;
                 font-size: 0.82rem;
+            }
+            .daily-kpis-container {
+                grid-template-columns: 1fr 1fr !important;
+                gap: 8px !important;
+                margin-bottom: 14px !important;
+            }
+            .daily-kpis-container .card {
+                padding: 12px 8px !important;
+                border-radius: 12px !important;
+            }
+            .daily-kpis-container h3 {
+                font-size: 0.76rem !important;
+                line-height: 1.2 !important;
+                margin-bottom: 4px !important;
+            }
+            .daily-kpis-container #totalFacturadoHoyLabel,
+            .daily-kpis-container #totalGananciaHoyLabel {
+                font-size: 1.15rem !important;
+                word-break: break-all !important;
+            }
+            .modal-dialog-card {
+                max-height: 94vh !important;
+                border-radius: 14px !important;
+            }
+            .modal-dialog-header {
+                padding: 10px 14px !important;
+            }
+            .modal-dialog-body {
+                padding: 12px 10px !important;
+            }
+            .modal-dialog-footer {
+                padding: 10px 12px !important;
             }
         }
     </style>
@@ -930,22 +1138,22 @@
         <!-- CONTENEDOR MODO COMPLETO (PESTAÑAS Y TABLAS) -->
         <div id="panelModoCompleto" style="display: none;">
             <!-- Barra de Navegación por Pantallas (Pestañas) -->
-            <nav class="nav-tabs" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-                <div style="display: flex; gap: 4px;">
+            <nav class="nav-tabs-wrapper">
+                <div class="nav-tabs-grid">
                     <button id="tabBtn-ventas" class="tab-button active" onclick="cambiarPantalla('ventas')">
                         🛒 Registrar Ventas
                     </button>
                     <button id="tabBtn-productos" class="tab-button" onclick="cambiarPantalla('productos')">
-                        📦 Gestión de Productos
+                        📦 Gestión Productos
                     </button>
                     <button id="tabBtn-reportes" class="tab-button" onclick="cambiarPantalla('reportes')">
                         📊 Reportes y Métricas
                     </button>
                     <button id="tabBtn-proveedores" class="tab-button" onclick="cambiarPantalla('proveedores')">
-                        🚚 Pago a Proveedores
+                        🚚 Pago Proveedores
                     </button>
                 </div>
-                <button id="tabBtn-config" class="tab-button" onclick="abrirModalConfig()" style="border: none; padding: 10px 15px; cursor: pointer; font-size: 1.1rem; color: #7f8c8d; background: transparent; transition: var(--transition);" title="Configuración de Base de Datos (Supabase)">
+                <button id="tabBtn-config" class="btn-config-db" onclick="abrirModalConfig()" title="Configuración de Base de Datos (Supabase)">
                     ⚙️ Base de Datos
                 </button>
             </nav>
@@ -954,23 +1162,23 @@
             <!-- PESTAÑA: REGISTRAR VENTAS -->
             <div id="tab-ventas" class="tab-content active single-card-layout">
                 <!-- INDICADORES DIARIOS -->
-                <div class="daily-kpis-container" style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
+                <div class="daily-kpis-container">
                     <!-- KPI Facturación -->
-                    <div class="card" style="flex: 1; min-width: 200px; text-align: center; padding: 20px; margin-bottom: 0;">
-                        <h3 style="font-size: 0.95rem; color: var(--text-muted); font-weight: 500; margin-bottom: 5px;">
-                            Total facturado hoy: <span id="fechaHoyLabel">--/--/----</span>
+                    <div class="card" style="text-align: center; padding: 16px; margin-bottom: 0;">
+                        <h3 style="font-size: 0.88rem; color: var(--text-muted); font-weight: 600; margin-bottom: 5px;">
+                            Facturado hoy: <span id="fechaHoyLabel">--/--/----</span>
                         </h3>
-                        <div id="totalFacturadoHoyLabel" style="font-size: 1.8rem; font-weight: bold; color: var(--primary-color); font-family: monospace;">
+                        <div id="totalFacturadoHoyLabel" style="font-size: 1.6rem; font-weight: 800; color: var(--primary-color); font-family: monospace;">
                             $0,00
                         </div>
                     </div>
                     
                     <!-- KPI Ganancia -->
-                    <div class="card" style="flex: 1; min-width: 200px; text-align: center; padding: 20px; margin-bottom: 0;">
-                        <h3 style="font-size: 0.95rem; color: var(--text-muted); font-weight: 500; margin-bottom: 5px;">
-                            Total ganancias hoy:
+                    <div class="card" style="text-align: center; padding: 16px; margin-bottom: 0;">
+                        <h3 style="font-size: 0.88rem; color: var(--text-muted); font-weight: 600; margin-bottom: 5px;">
+                            Ganancias hoy:
                         </h3>
-                        <div id="totalGananciaHoyLabel" style="font-size: 1.8rem; font-weight: bold; color: var(--secondary-color); font-family: monospace;">
+                        <div id="totalGananciaHoyLabel" style="font-size: 1.6rem; font-weight: 800; color: var(--secondary-color); font-family: monospace;">
                             $0,00
                         </div>
                     </div>
@@ -4800,306 +5008,312 @@ Reglas:
         }
     </script>
     <!-- MODAL DE CONFIGURACIÓN DE BASE DE DATOS (SUPABASE) -->
-    <div id="modalConfig" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
-        <div class="card" style="width: 90%; max-width: 480px; padding: 25px; border-radius: var(--border-radius); position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.15); background-color: white; margin: 10% auto;">
-            <span onclick="cerrarModalConfig()" style="position: absolute; right: 20px; top: 15px; font-size: 1.5rem; font-weight: bold; color: var(--text-muted); cursor: pointer; user-select: none;">&times;</span>
-            <h2 style="font-size: 1.25rem; color: var(--primary-color); margin-bottom: 15px; border-bottom: 2px solid #f1f2f6; padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">⚙️ Configurar Base de Datos</h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Para persistir la información en internet y sincronizarla en la nube, ingresa tus credenciales de <strong>Supabase</strong>. Si las dejas vacías, el sistema seguirá guardando localmente.</p>
-            
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label for="configUrl" style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; color: var(--primary-color);">Supabase URL</label>
-                <input type="text" id="configUrl" class="form-control" placeholder="https://your-project-id.supabase.co" style="width:100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;">
+    <div id="modalConfig" class="modal-backdrop" style="display: none;">
+        <div class="modal-dialog-card" style="max-width: 480px;">
+            <div class="modal-dialog-header">
+                <h2><span>⚙️</span> Configurar Base de Datos</h2>
+                <button type="button" class="modal-close-btn" onclick="cerrarModalConfig()">&times;</button>
             </div>
-            
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label for="configKey" style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; color: var(--primary-color);">Supabase Anon Key (Clave API)</label>
-                <input type="text" id="configKey" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." style="width:100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;">
-            </div>
+            <div class="modal-dialog-body">
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Para persistir la información en internet y sincronizarla en la nube, ingresa tus credenciales de <strong>Supabase</strong>. Si las dejas vacías, el sistema seguirá guardando localmente.</p>
+                
+                <div class="form-group">
+                    <label for="configUrl">Supabase URL</label>
+                    <input type="text" id="configUrl" class="form-control" placeholder="https://your-project-id.supabase.co">
+                </div>
+                
+                <div class="form-group">
+                    <label for="configKey">Supabase Anon Key (Clave API)</label>
+                    <input type="text" id="configKey" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+                </div>
 
-            <div class="form-group" style="margin-bottom: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-                <label for="configGeminiKey" style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; color: #8e44ad;">
-                    ✨ Google Gemini API Key (Asistente IA)
-                </label>
-                <input type="text" id="configGeminiKey" class="form-control" placeholder="AIzaSy..." style="width:100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;">
-                <small style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 4px;">
-                    Obtén tu clave gratuita en <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--secondary-color); font-weight: 600;">Google AI Studio</a>.
-                </small>
+                <div class="form-group" style="border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 15px;">
+                    <label for="configGeminiKey" style="color: #8e44ad; font-weight: 700;">
+                        ✨ Google Gemini API Key (Asistente IA)
+                    </label>
+                    <input type="text" id="configGeminiKey" class="form-control" placeholder="AIzaSy...">
+                    <small style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-top: 4px;">
+                        Obtén tu clave gratuita en <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--secondary-color); font-weight: 600;">Google AI Studio</a>.
+                    </small>
+                </div>
             </div>
-
-            <div class="form-group" style="display: flex; gap: 10px; margin-top: 20px;">
-                <button onclick="guardarConfigSupabase()" class="btn-submit" style="margin-top: 0; flex: 1; height: 38px; background-color: var(--secondary-color); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Guardar y Conectar</button>
-                <button onclick="cerrarModalConfig()" class="btn-cancel" style="margin-top: 0; flex: 1; height: 38px; background-color: #e2e2e2; color: #333; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Cancelar</button>
+            <div class="modal-dialog-footer">
+                <button type="button" onclick="cerrarModalConfig()" class="btn-cancel" style="width: auto; flex: 1;">Cancelar</button>
+                <button type="button" onclick="guardarConfigSupabase()" class="btn-submit" style="width: auto; flex: 1;">Guardar y Conectar</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL DEL ASISTENTE IA (GOOGLE GEMINI FLASH) -->
-    <div id="modalAsistenteIA" style="display: none; position: fixed; z-index: 1060; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.65); backdrop-filter: blur(2px);">
-        <div class="card" style="width: 92%; max-width: 820px; padding: 25px; border-radius: var(--border-radius); position: relative; box-shadow: 0 6px 30px rgba(0,0,0,0.25); background-color: white; margin: 3% auto;">
-            <span onclick="cerrarModalAsistenteIA()" style="position: absolute; right: 20px; top: 15px; font-size: 1.6rem; font-weight: bold; color: var(--text-muted); cursor: pointer; user-select: none;">&times;</span>
-            
-            <div style="display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #f1f2f6; padding-bottom: 12px; margin-bottom: 15px;">
-                <span style="font-size: 1.8rem;">✨</span>
-                <div>
-                    <h2 style="font-size: 1.3rem; color: var(--primary-color); margin: 0;">Asistente Inteligente de Carga (IA)</h2>
-                    <p style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">Habla libremente o escribe/pega una lista. Gemini Flash extraerá productos, pesos, costos, márgenes y categorías automáticamente.</p>
-                </div>
+    <div id="modalAsistenteIA" class="modal-backdrop" style="display: none;">
+        <div class="modal-dialog-card" style="max-width: 820px;">
+            <div class="modal-dialog-header">
+                <h2><span>✨</span> Asistente de Carga de Mercadería</h2>
+                <button type="button" class="modal-close-btn" onclick="cerrarModalAsistenteIA()">&times;</button>
             </div>
+            <div class="modal-dialog-body">
+                <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">Habla libremente o escribe/pega una lista o foto de tu ticket. Gemini extraerá productos, pesos, costos, márgenes y categorías automáticamente.</p>
 
-            <!-- Aviso si falta la clave de API -->
-            <div id="alertaFaltaGeminiKey" style="display: none; background-color: #fff8e1; border: 1px solid #ffe082; padding: 12px 15px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem; color: #795548;">
-                <div style="font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-                    <span>⚠️ Clave de Google Gemini no configurada</span>
-                </div>
-                <div>Para usar el Asistente IA necesitas una clave gratuita de Google Gemini.</div>
-                <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
-                    <input type="text" id="quickGeminiKeyInput" placeholder="Pega tu clave AIzaSy..." style="flex: 1; min-width: 200px; padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85rem;">
-                    <button type="button" onclick="guardarClaveRapidaGemini()" style="background-color: var(--secondary-color); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 600; cursor: pointer;">Guardar Clave</button>
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" style="display: inline-flex; align-items: center; padding: 6px 10px; color: #1565c0; font-weight: 600; text-decoration: underline; font-size: 0.85rem;">Obtener clave gratis en Google</a>
-                </div>
-            </div>
-
-            <!-- Panel de Entrada (Grabación por Voz, Foto de Ticket y Texto) -->
-            <div style="background-color: #f8f9fa; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 18px; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
-                    <label for="txtEntradaIA" style="font-weight: 700; font-size: 0.95rem; color: var(--primary-color); display: flex; align-items: center; gap: 6px;">
-                        <span>📷 Foto de Ticket, 🎙️ Voz o 📝 Texto</span>
-                    </label>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <button type="button" onclick="document.getElementById('fileFotoTicketIA').click()" style="background-color: #27ae60; color: white; border: none; padding: 7px 15px; border-radius: 20px; font-size: 0.88rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(39, 174, 96, 0.25); transition: all 0.2s;" title="Tomar foto con la cámara o subir imagen de ticket">
-                            <span>📷 Foto / Ticket</span>
-                        </button>
-                        <input type="file" id="fileFotoTicketIA" accept="image/*" capture="environment" style="display: none;" onchange="procesarFotoTicketIA(this)">
-
-                        <button type="button" id="btnGrabarAudioIA" onclick="toggleGrabacionIA()" style="background-color: #2980b9; color: white; border: none; padding: 7px 15px; border-radius: 20px; font-size: 0.88rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(41, 128, 185, 0.25); transition: all 0.2s;" title="Grabar dictado por voz">
-                            <span id="iconGrabarIA">🎙️</span> <span id="txtGrabarIA">Hablar</span>
-                        </button>
+                <!-- Aviso si falta la clave de API -->
+                <div id="alertaFaltaGeminiKey" style="display: none; background-color: #fff8e1; border: 1px solid #ffe082; padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 0.85rem; color: #795548;">
+                    <div style="font-weight: 700; margin-bottom: 4px;">⚠️ Clave de Google Gemini no configurada</div>
+                    <div>Para usar el Asistente IA necesitas una clave gratuita de Google Gemini.</div>
+                    <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+                        <input type="text" id="quickGeminiKeyInput" placeholder="Pega tu clave AIzaSy..." style="flex: 1; min-width: 180px; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.85rem;">
+                        <button type="button" onclick="guardarClaveRapidaGemini()" class="btn-submit" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">Guardar Clave</button>
                     </div>
                 </div>
 
-                <!-- Vista previa de foto de ticket adjunta -->
-                <div id="previewFotoTicketIA" style="display: none; align-items: center; gap: 12px; background-color: #ffffff; border: 1px dashed #27ae60; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px;">
-                    <img id="imgThumbnailTicketIA" src="" alt="Ticket" style="height: 55px; width: 55px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border-color);">
-                    <div style="flex: 1;">
-                        <div style="font-weight: 700; font-size: 0.85rem; color: #27ae60;">📷 Foto de Ticket / Factura adjunta</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted);">La IA leerá los productos, cantidades y precios directamente de esta imagen.</div>
+                <!-- Panel de Entrada (Grabación por Voz, Foto de Ticket y Texto) -->
+                <div style="background-color: #f8f9fa; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 14px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+                        <label for="txtEntradaIA" style="font-weight: 700; font-size: 0.9rem; color: var(--primary-color);">
+                            📷 Foto de Ticket, 🎙️ Voz o 📝 Texto
+                        </label>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            <button type="button" onclick="document.getElementById('fileFotoTicketIA').click()" style="background-color: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 18px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                                <span>📷 Foto</span>
+                            </button>
+                            <input type="file" id="fileFotoTicketIA" accept="image/*" capture="environment" style="display: none;" onchange="procesarFotoTicketIA(this)">
+
+                            <button type="button" id="btnGrabarAudioIA" onclick="toggleGrabacionIA()" style="background-color: #2980b9; color: white; border: none; padding: 6px 12px; border-radius: 18px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                                <span id="iconGrabarIA">🎙️</span> <span id="txtGrabarIA">Hablar</span>
+                            </button>
+                        </div>
                     </div>
-                    <button type="button" onclick="eliminarFotoTicketIA()" style="background: none; border: none; cursor: pointer; font-size: 1.1rem; color: #e74c3c;" title="Quitar foto">🗑️</button>
+
+                    <!-- Vista previa de foto de ticket adjunta -->
+                    <div id="previewFotoTicketIA" style="display: none; align-items: center; gap: 10px; background-color: #ffffff; border: 1px dashed #27ae60; padding: 8px 10px; border-radius: 8px; margin-bottom: 10px;">
+                        <img id="imgThumbnailTicketIA" src="" alt="Ticket" style="height: 48px; width: 48px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color);">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 700; font-size: 0.82rem; color: #27ae60;">📷 Foto de Ticket / Factura adjunta</div>
+                            <div style="font-size: 0.72rem; color: var(--text-muted);">La IA leerá los productos y precios de la imagen.</div>
+                        </div>
+                        <button type="button" onclick="eliminarFotoTicketIA()" style="background: none; border: none; cursor: pointer; font-size: 1.1rem; color: #e74c3c;">🗑️</button>
+                    </div>
+
+                    <textarea id="txtEntradaIA" rows="3" class="form-control" style="font-size: 0.9rem;" placeholder="Habla, escribe o sube una foto de tu ticket. También puedes agregar notas aquí (ej: 'ganancia 35% para todo')..."></textarea>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">
+                            💡 <em>Tip: Habla con libertad, la IA entenderá cantidades y cuentas.</em>
+                        </span>
+                        <div style="display: flex; gap: 8px;">
+                            <button type="button" onclick="limpiarEntradaIA()" class="btn-cancel" style="width: auto; padding: 6px 12px; font-size: 0.82rem;">
+                                Limpiar
+                            </button>
+                            <button type="button" id="btnProcesarIA" onclick="procesarConGeminiIA()" class="btn-submit" style="width: auto; padding: 6px 16px; font-size: 0.88rem;">
+                                <span>✨ Interpretar con IA</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                <textarea id="txtEntradaIA" rows="3" class="form-control" style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.95rem; line-height: 1.4; resize: vertical;" placeholder="Habla, escribe o sube una foto de tu ticket. También puedes agregar notas aquí (ej: 'ganancia 35% para todo')..."></textarea>
+                <!-- Animación de Carga -->
+                <div id="loadingIA" style="display: none; text-align: center; padding: 20px; background-color: #fdfefe; border-radius: 10px; border: 1px dashed #d81b60; margin-bottom: 16px;">
+                    <div style="font-size: 2rem; margin-bottom: 6px;">🧠✨</div>
+                    <div style="font-weight: 700; color: var(--primary-color); font-size: 0.95rem;">La Inteligencia Artificial está interpretando tu carga...</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Analizando nombres, unidades (kg/g/un), costos, ganancias y deduciendo categorías.</div>
+                </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 12px;">
-                    <span style="font-size: 0.78rem; color: var(--text-muted);">
-                        💡 <em>Tip: Habla con total libertad, la IA entenderá modismos argentinos, cantidades y cuentas.</em>
-                    </span>
-                    <div style="display: flex; gap: 10px;">
-                        <button type="button" onclick="limpiarEntradaIA()" class="btn-cancel" style="margin-top: 0; padding: 8px 14px; font-size: 0.85rem;">
-                            Limpiar
+                <!-- Vista Previa de Productos Interpretados -->
+                <div id="seccionPreviewIA" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                        <h3 style="font-size: 0.98rem; color: var(--primary-color); margin: 0;">
+                            📋 Productos Detectados (<span id="cantProductosIADetectados">0</span>)
+                        </h3>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">Puedes modificar cualquier campo antes de confirmar:</span>
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 260px; overflow-y: auto; margin-bottom: 12px;">
+                        <table style="min-width: 620px; font-size: 0.85rem;">
+                            <thead style="position: sticky; top: 0; z-index: 10;">
+                                <tr>
+                                    <th>Nombre Producto</th>
+                                    <th style="width: 120px;">Categoría</th>
+                                    <th style="width: 70px; text-align: center;">Cant.</th>
+                                    <th style="width: 95px;">Unidad</th>
+                                    <th style="width: 90px; text-align: right;">Costo ($)</th>
+                                    <th style="width: 75px; text-align: center;">Gan. (%)</th>
+                                    <th style="width: 95px; text-align: right;">P. Venta</th>
+                                    <th style="width: 40px; text-align: center;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaPreviewIABody">
+                                <!-- Filas generadas por JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" onclick="cancelarPreviewIA()" class="btn-cancel" style="width: auto; padding: 8px 16px;">
+                            Descartar
                         </button>
-                        <button type="button" id="btnProcesarIA" onclick="procesarConGeminiIA()" class="btn-submit" style="margin-top: 0; background: linear-gradient(135deg, #8e44ad, #2980b9); color: white; font-weight: 700; padding: 8px 20px; font-size: 0.95rem; border: none; border-radius: 4px; box-shadow: 0 3px 10px rgba(41, 128, 185, 0.3); display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                            <span>✨ Interpretar con IA</span>
+                        <button type="button" onclick="confirmarGuardadoProductosIA()" class="btn-submit" style="width: auto; background: #27ae60; padding: 8px 20px;">
+                            💾 Confirmar y Guardar Todos
                         </button>
                     </div>
                 </div>
             </div>
-
-            <!-- Animación de Carga -->
-            <div id="loadingIA" style="display: none; text-align: center; padding: 25px; background-color: #fdfefe; border-radius: 8px; border: 1px dashed #2980b9; margin-bottom: 20px;">
-                <div style="font-size: 2.2rem; margin-bottom: 8px;">🧠✨</div>
-                <div style="font-weight: 700; color: var(--primary-color); font-size: 1rem;">La Inteligencia Artificial está interpretando tu pedido...</div>
-                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Analizando nombres, unidades (kg/g/un), costos, ganancias y deduciendo categorías.</div>
-            </div>
-
-            <!-- Vista Previa de Productos Interpretados -->
-            <div id="seccionPreviewIA" style="display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-                    <h3 style="font-size: 1.05rem; color: var(--primary-color); margin: 0;">
-                        📋 Productos Detectados (<span id="cantProductosIADetectados">0</span>)
-                    </h3>
-                    <span style="font-size: 0.8rem; color: var(--text-muted);">Puedes modificar cualquier campo antes de confirmar:</span>
-                </div>
-
-                <div style="max-height: 280px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius); margin-bottom: 15px;">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
-                        <thead style="position: sticky; top: 0; background-color: #f8f9fa; z-index: 10;">
-                            <tr>
-                                <th>Nombre Producto</th>
-                                <th style="width: 130px;">Categoría</th>
-                                <th style="width: 75px; text-align: center;">Cant.</th>
-                                <th style="width: 105px;">Unidad</th>
-                                <th style="width: 95px; text-align: right;">Costo ($)</th>
-                                <th style="width: 80px; text-align: center;">Gan. (%)</th>
-                                <th style="width: 100px; text-align: right;">P. Venta</th>
-                                <th style="width: 40px; text-align: center;"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaPreviewIABody">
-                            <!-- Filas generadas por JS -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <div style="display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap;">
-                    <button type="button" onclick="cancelarPreviewIA()" class="btn-cancel" style="margin-top: 0; padding: 10px 18px;">
-                        Descartar
-                    </button>
-                    <button type="button" onclick="confirmarGuardadoProductosIA()" class="btn-submit" style="margin-top: 0; background-color: #27ae60; padding: 10px 24px; font-weight: 700; font-size: 1rem; box-shadow: 0 3px 10px rgba(39, 174, 96, 0.3);">
-                        💾 Confirmar y Guardar Todos
-                    </button>
-                </div>
+            <div class="modal-dialog-footer">
+                <button type="button" onclick="cerrarModalAsistenteIA()" class="btn-cancel" style="width: auto; padding: 8px 16px;">Cerrar</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL DE ASISTENTE DE VENTA POR VOZ (IA) -->
-    <div id="modalVentaVozIA" style="display: none; position: fixed; z-index: 1060; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.65); backdrop-filter: blur(2px);">
-        <div class="card" style="width: 92%; max-width: 800px; padding: 25px; border-radius: var(--border-radius); position: relative; box-shadow: 0 6px 30px rgba(0,0,0,0.25); background-color: white; margin: 3% auto;">
-            <span onclick="cerrarModalVentaVozIA()" style="position: absolute; right: 20px; top: 15px; font-size: 1.6rem; font-weight: bold; color: var(--text-muted); cursor: pointer; user-select: none;">&times;</span>
-            
-            <div style="display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #f1f2f6; padding-bottom: 12px; margin-bottom: 15px;">
-                <span style="font-size: 1.8rem;">🎙️</span>
-                <div>
-                    <h2 style="font-size: 1.3rem; color: var(--primary-color); margin: 0;">Asistente de Venta por Voz (IA)</h2>
-                    <p style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">Dicta lo vendido con lenguaje cotidiano. Gemini reconocerá los productos del catálogo, calculará los totales y descontará el stock automáticamente.</p>
-                </div>
+    <div id="modalVentaVozIA" class="modal-backdrop" style="display: none;">
+        <div class="modal-dialog-card" style="max-width: 780px;">
+            <div class="modal-dialog-header">
+                <h2><span>🎙️</span> Venta por Voz (IA)</h2>
+                <button type="button" class="modal-close-btn" onclick="cerrarModalVentaVozIA()">&times;</button>
             </div>
+            <div class="modal-dialog-body">
+                <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">Dicta lo vendido con lenguaje cotidiano. Gemini reconocerá los productos del catálogo, calculará los totales y descontará el stock automáticamente.</p>
 
-            <!-- Panel de Entrada de Voz -->
-            <div style="background-color: #f8f9fa; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 18px; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
-                    <label for="txtEntradaVentaIA" style="font-weight: 700; font-size: 0.95rem; color: var(--primary-color); display: flex; align-items: center; gap: 6px;">
-                        <span>🎙️ Dictado de Venta</span>
-                    </label>
-                    <button type="button" id="btnGrabarVentaIA" onclick="toggleGrabacionVentaIA()" style="background-color: #2980b9; color: white; border: none; padding: 8px 18px; border-radius: 20px; font-size: 0.9rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: all 0.2s;">
-                        <span id="iconGrabarVentaIA">🎙️</span> <span id="txtGrabarVentaIA">Comenzar a Hablar</span>
-                    </button>
-                </div>
+                <!-- Panel de Entrada de Voz -->
+                <div style="background-color: #f8f9fa; border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 14px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+                        <label for="txtEntradaVentaIA" style="font-weight: 700; font-size: 0.9rem; color: var(--primary-color);">
+                            🎙️ Dictado de Venta
+                        </label>
+                        <button type="button" id="btnGrabarVentaIA" onclick="toggleGrabacionVentaIA()" style="background-color: #2980b9; color: white; border: none; padding: 7px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+                            <span id="iconGrabarVentaIA">🎙️</span> <span id="txtGrabarVentaIA">Comenzar a Hablar</span>
+                        </button>
+                    </div>
 
-                <textarea id="txtEntradaVentaIA" rows="3" class="form-control" style="width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.95rem; line-height: 1.4; resize: vertical;" placeholder="Ejemplos hablados o escritos:
+                    <textarea id="txtEntradaVentaIA" rows="3" class="form-control" style="font-size: 0.9rem;" placeholder="Ejemplos hablados o escritos:
 • 'Vendí dos kilos y medio de pata muslo y tres maples de huevos en efectivo a Juan'
 • 'Medio kilo de jamón cocido y dos cocas de litro y medio por transferencia'"></textarea>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 12px;">
-                    <span style="font-size: 0.78rem; color: var(--text-muted);">
-                        💡 <em>Tip: Menciona las cantidades, productos, cliente y método de pago si lo deseas.</em>
-                    </span>
-                    <div style="display: flex; gap: 10px;">
-                        <button type="button" onclick="limpiarEntradaVentaIA()" class="btn-cancel" style="margin-top: 0; padding: 8px 14px; font-size: 0.85rem;">
-                            Limpiar
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">
+                            💡 <em>Tip: Menciona las cantidades, productos, cliente y método de pago.</em>
+                        </span>
+                        <div style="display: flex; gap: 8px;">
+                            <button type="button" onclick="limpiarEntradaVentaIA()" class="btn-cancel" style="width: auto; padding: 6px 12px; font-size: 0.82rem;">
+                                Limpiar
+                            </button>
+                            <button type="button" id="btnProcesarVentaIA" onclick="procesarVentaConGeminiIA()" class="btn-submit" style="width: auto; padding: 6px 16px; font-size: 0.88rem;">
+                                <span>✨ Interpretar Venta</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Animación de Carga -->
+                <div id="loadingVentaIA" style="display: none; text-align: center; padding: 20px; background-color: #fdfefe; border-radius: 10px; border: 1px dashed #d81b60; margin-bottom: 16px;">
+                    <div style="font-size: 2rem; margin-bottom: 6px;">🧠✨</div>
+                    <div style="font-weight: 700; color: var(--primary-color); font-size: 0.95rem;">La Inteligencia Artificial está armando tu venta...</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Cruzando los productos dictados con el catálogo y calculando subtotales.</div>
+                </div>
+
+                <!-- Vista Previa de la Venta Detectada -->
+                <div id="seccionPreviewVentaIA" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; background-color: #f1f5f9; padding: 10px 12px; border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 0.82rem; color: #555; font-weight: 600;">Cliente:</span>
+                            <input type="text" id="previewVentaCliente" class="form-control" style="width: auto; min-width: 130px; padding: 4px 8px; font-size: 0.82rem;" value="Consumidor Final">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 0.82rem; color: #555; font-weight: 600;">Pago:</span>
+                            <select id="previewVentaFormaPago" class="form-control" style="width: auto; padding: 4px 8px; font-size: 0.82rem;">
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Transferencia / MP">Transferencia / Mercado Pago</option>
+                                <option value="Débito">Tarjeta de Débito</option>
+                                <option value="Crédito">Tarjeta de Crédito</option>
+                                <option value="Cuenta Corriente">Cuenta Corriente (Fiado)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 240px; overflow-y: auto; margin-bottom: 12px;">
+                        <table style="min-width: 460px; font-size: 0.85rem;">
+                            <thead style="position: sticky; top: 0; z-index: 10;">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th style="width: 85px; text-align: center;">Cantidad</th>
+                                    <th style="width: 95px; text-align: right;">Precio Unit.</th>
+                                    <th style="width: 95px; text-align: right;">Subtotal</th>
+                                    <th style="width: 35px; text-align: center;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaPreviewVentaIABody">
+                                <!-- Filas dinámicas -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background-color: #f1f2f6; padding: 10px 14px; border-radius: 8px; margin-bottom: 12px;">
+                        <span style="font-weight: 700; font-size: 1rem; color: var(--primary-color);">Total Venta:</span>
+                        <span id="previewVentaTotalLabel" style="font-size: 1.4rem; font-weight: 800; color: var(--primary-color); font-family: monospace;">$0,00</span>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" onclick="cancelarPreviewVentaIA()" class="btn-cancel" style="width: auto; padding: 8px 16px;">
+                            Descartar
                         </button>
-                        <button type="button" id="btnProcesarVentaIA" onclick="procesarVentaConGeminiIA()" class="btn-submit" style="margin-top: 0; background: linear-gradient(135deg, #8e44ad, #2980b9); color: white; font-weight: 700; padding: 8px 20px; font-size: 0.95rem; border: none; border-radius: 4px; box-shadow: 0 3px 10px rgba(41, 128, 185, 0.3); display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                            <span>✨ Interpretar Venta</span>
+                        <button type="button" id="btnConfirmarVentaIA" onclick="confirmarVentaVozIA()" class="btn-submit" style="width: auto; background: #27ae60; padding: 8px 20px;">
+                            💾 Confirmar Venta y Descontar Stock
                         </button>
                     </div>
                 </div>
             </div>
-
-            <!-- Animación de Carga -->
-            <div id="loadingVentaIA" style="display: none; text-align: center; padding: 25px; background-color: #fdfefe; border-radius: 8px; border: 1px dashed #2980b9; margin-bottom: 20px;">
-                <div style="font-size: 2.2rem; margin-bottom: 8px;">🧠✨</div>
-                <div style="font-weight: 700; color: var(--primary-color); font-size: 1rem;">La Inteligencia Artificial está armando tu venta...</div>
-                <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Cruzando los productos dictados con el catálogo y calculando subtotales.</div>
-            </div>
-
-            <!-- Vista Previa de la Venta Detectada -->
-            <div id="seccionPreviewVentaIA" style="display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; background-color: #eaf2f8; padding: 10px 14px; border-radius: 6px;">
-                    <div>
-                        <span style="font-size: 0.85rem; color: #555; font-weight: 600;">Cliente:</span>
-                        <input type="text" id="previewVentaCliente" class="form-control" style="display: inline-block; width: auto; min-width: 140px; padding: 4px 8px; font-size: 0.85rem; margin-left: 6px;" value="Consumidor Final">
-                    </div>
-                    <div>
-                        <span style="font-size: 0.85rem; color: #555; font-weight: 600;">Forma de Pago:</span>
-                        <select id="previewVentaFormaPago" class="form-control" style="display: inline-block; width: auto; padding: 4px 8px; font-size: 0.85rem; margin-left: 6px;">
-                            <option value="Efectivo">Efectivo</option>
-                            <option value="Transferencia / MP">Transferencia / Mercado Pago</option>
-                            <option value="Débito">Tarjeta de Débito</option>
-                            <option value="Crédito">Tarjeta de Crédito</option>
-                            <option value="Cuenta Corriente">Cuenta Corriente (Fiado)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius); margin-bottom: 15px;">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
-                        <thead style="position: sticky; top: 0; background-color: #f8f9fa; z-index: 10;">
-                            <tr>
-                                <th>Producto</th>
-                                <th style="width: 90px; text-align: center;">Cantidad</th>
-                                <th style="width: 110px; text-align: right;">Precio Unit.</th>
-                                <th style="width: 110px; text-align: right;">Subtotal</th>
-                                <th style="width: 40px; text-align: center;"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaPreviewVentaIABody">
-                            <!-- Filas dinámicas -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; background-color: #f1f2f6; padding: 12px 18px; border-radius: 6px; margin-bottom: 15px;">
-                    <span style="font-weight: 700; font-size: 1.1rem; color: var(--primary-color);">Total Venta:</span>
-                    <span id="previewVentaTotalLabel" style="font-size: 1.5rem; font-weight: 800; color: var(--primary-color); font-family: monospace;">$0,00</span>
-                </div>
-
-                <div style="display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap;">
-                    <button type="button" onclick="cancelarPreviewVentaIA()" class="btn-cancel" style="margin-top: 0; padding: 10px 18px;">
-                        Descartar
-                    </button>
-                    <button type="button" id="btnConfirmarVentaIA" onclick="confirmarVentaVozIA()" class="btn-submit" style="margin-top: 0; background-color: #27ae60; padding: 10px 24px; font-weight: 700; font-size: 1rem; box-shadow: 0 3px 10px rgba(39, 174, 96, 0.3);">
-                        💾 Confirmar Venta y Descontar Stock
-                    </button>
-                </div>
+            <div class="modal-dialog-footer">
+                <button type="button" onclick="cerrarModalVentaVozIA()" class="btn-cancel" style="width: auto; padding: 8px 16px;">Cerrar</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL DE NUEVO PROVEEDOR -->
-    <div id="modalNuevoProveedor" style="display: none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
-        <div class="card" style="width: 90%; max-width: 440px; padding: 25px; border-radius: var(--border-radius); position: relative; box-shadow: 0 4px 20px rgba(0,0,0,0.15); background-color: white; margin: 8% auto;">
-            <span onclick="cerrarModalNuevoProveedor()" style="position: absolute; right: 20px; top: 15px; font-size: 1.5rem; font-weight: bold; color: var(--text-muted); cursor: pointer; user-select: none;">&times;</span>
-            <h2 style="font-size: 1.2rem; color: var(--primary-color); margin-bottom: 15px; border-bottom: 2px solid #f1f2f6; padding-bottom: 10px; display: flex; align-items: center; gap: 8px;">🚚 Administrar Proveedores</h2>
-            
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label for="nuevoProveedorNombre" style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem;">Nombre del Proveedor *</label>
-                <input type="text" id="nuevoProveedorNombre" class="form-control" placeholder="Ej: Molino Cañuelas, Distribuidora San Juan" maxlength="100">
+    <div id="modalNuevoProveedor" class="modal-backdrop" style="display: none;">
+        <div class="modal-dialog-card" style="max-width: 460px;">
+            <div class="modal-dialog-header">
+                <h2><span>🚚</span> Administrar Proveedores</h2>
+                <button type="button" class="modal-close-btn" onclick="cerrarModalNuevoProveedor()">&times;</button>
             </div>
-            
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label for="nuevoProveedorTelefono" style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem;">Teléfono / Contacto (Opcional)</label>
-                <input type="text" id="nuevoProveedorTelefono" class="form-control" placeholder="Ej: 342 555-1234" maxlength="50">
-            </div>
-
-            <div class="form-group" style="display: flex; gap: 10px; margin-top: 20px;">
-                <button type="button" onclick="guardarNuevoProveedor()" class="btn-submit" style="margin-top: 0; flex: 1; height: 38px; background-color: var(--secondary-color); color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Guardar Proveedor</button>
-                <button type="button" onclick="cerrarModalNuevoProveedor()" class="btn-cancel" style="margin-top: 0; flex: 1; height: 38px; background-color: #e2e2e2; color: #333; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Cerrar</button>
-            </div>
-
-            <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-                <h4 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">Proveedores Registrados:</h4>
-                <div id="listaProveedoresExistentes" style="max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
-                    <!-- Lista dinámica con botón de eliminar -->
+            <div class="modal-dialog-body">
+                <div class="form-group">
+                    <label for="nuevoProveedorNombre">Nombre del Proveedor *</label>
+                    <input type="text" id="nuevoProveedorNombre" class="form-control" placeholder="Ej: Molino Cañuelas, Distribuidora San Juan" maxlength="100">
                 </div>
+                
+                <div class="form-group">
+                    <label for="nuevoProveedorTelefono">Teléfono / Contacto (Opcional)</label>
+                    <input type="text" id="nuevoProveedorTelefono" class="form-control" placeholder="Ej: 342 555-1234" maxlength="50">
+                </div>
+
+                <div style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 12px;">
+                    <h4 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">Proveedores Registrados:</h4>
+                    <div id="listaProveedoresExistentes" style="max-height: 140px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px;">
+                        <!-- Lista dinámica con botón de eliminar -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-dialog-footer">
+                <button type="button" onclick="cerrarModalNuevoProveedor()" class="btn-cancel" style="width: auto; flex: 1;">Cerrar</button>
+                <button type="button" onclick="guardarNuevoProveedor()" class="btn-submit" style="width: auto; flex: 1;">Guardar Proveedor</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL DE VISUALIZACIÓN DE COMPROBANTE -->
-    <div id="modalVerComprobante" style="display: none; position: fixed; z-index: 1100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.75); backdrop-filter: blur(2px);" onclick="cerrarModalVerComprobante()">
-        <div class="card" style="width: 90%; max-width: 700px; padding: 20px; border-radius: var(--border-radius); position: relative; box-shadow: 0 6px 25px rgba(0,0,0,0.3); background-color: white; margin: 4% auto; text-align: center;" onclick="event.stopPropagation()">
-            <span onclick="cerrarModalVerComprobante()" style="position: absolute; right: 20px; top: 15px; font-size: 1.6rem; font-weight: bold; color: var(--text-muted); cursor: pointer; user-select: none;">&times;</span>
-            <h3 id="modalComprobanteTitulo" style="font-size: 1.1rem; color: var(--primary-color); margin-bottom: 15px; text-align: left; padding-right: 30px;">📸 Foto de Comprobante</h3>
-            
-            <div style="max-height: 65vh; overflow: auto; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; border-radius: 6px; padding: 10px; border: 1px solid var(--border-color);">
-                <img id="modalComprobanteImg" src="" alt="Comprobante" style="max-width: 100%; max-height: 60vh; object-fit: contain; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+    <div id="modalVerComprobante" class="modal-backdrop" style="display: none;" onclick="cerrarModalVerComprobante()">
+        <div class="modal-dialog-card" style="max-width: 650px;" onclick="event.stopPropagation()">
+            <div class="modal-dialog-header">
+                <h3 id="modalComprobanteTitulo">📸 Foto de Comprobante</h3>
+                <button type="button" class="modal-close-btn" onclick="cerrarModalVerComprobante()">&times;</button>
             </div>
-
-            <div style="margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px;">
-                <a id="btnDescargarComprobante" href="#" download="comprobante.jpg" class="btn-submit" style="text-decoration: none; padding: 8px 16px; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 6px; background-color: var(--primary-color); color: white; border-radius: 4px; font-weight: 600;">
+            <div class="modal-dialog-body" style="text-align: center;">
+                <div style="max-height: 60vh; overflow: auto; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa; border-radius: 8px; padding: 10px; border: 1px solid var(--border-color);">
+                    <img id="modalComprobanteImg" src="" alt="Comprobante" style="max-width: 100%; max-height: 55vh; object-fit: contain; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                </div>
+            </div>
+            <div class="modal-dialog-footer">
+                <a id="btnDescargarComprobante" href="#" download="comprobante.jpg" class="btn-submit" style="text-decoration: none; width: auto; padding: 8px 16px; font-size: 0.88rem;">
                     📥 Descargar Imagen
                 </a>
-                <button type="button" onclick="cerrarModalVerComprobante()" class="btn-cancel" style="margin-top: 0; padding: 8px 16px; font-size: 0.9rem;">
+                <button type="button" onclick="cerrarModalVerComprobante()" class="btn-cancel" style="width: auto; padding: 8px 16px;">
                     Cerrar
                 </button>
             </div>
