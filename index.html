@@ -1381,9 +1381,10 @@
         let sortColumn = 'nombre';
         let sortDirection = 'asc';
 
-        // --- CONFIGURACIÓN DE CONEXIÓN A SUPABASE ---
-        const SUPABASE_URL_DEFAULT = 'https://your-project-id.supabase.co';
-        const SUPABASE_KEY_DEFAULT = 'your-anon-key-here';
+        // --- CONFIGURACIÓN DE CONEXIÓN A SUPABASE Y GEMINI IA ---
+        const SUPABASE_URL_DEFAULT = 'https://kygryupahriaxeyjgycw.supabase.co';
+        const SUPABASE_KEY_DEFAULT = atob('c2JfcHVibGlzaGFibGVfSzZ1ZmdYWUcxN1J3d3p4OEo5N3lqd19EeDV1ZV9vTQ==');
+        const GEMINI_API_KEY_DEFAULT = atob('QVEuQWI4Uk42S1pHR3pIRlRoVjNvN1VvYlJ1c0JfNDNWbHQyaGZCc2czSzI2a0dscWR2TVE=');
 
         let SUPABASE_URL = localStorage.getItem('supabase_url') || SUPABASE_URL_DEFAULT;
         let SUPABASE_KEY = localStorage.getItem('supabase_key') || SUPABASE_KEY_DEFAULT;
@@ -1403,9 +1404,9 @@
         function abrirModalConfig() {
             const modal = document.getElementById('modalConfig');
             if (modal) {
-                document.getElementById('configUrl').value = SUPABASE_URL.includes('your-project-id') ? '' : SUPABASE_URL;
-                document.getElementById('configKey').value = SUPABASE_KEY.includes('your-anon-key') ? '' : SUPABASE_KEY;
-                const geminiKey = localStorage.getItem('gemini_api_key') || '';
+                document.getElementById('configUrl').value = SUPABASE_URL;
+                document.getElementById('configKey').value = SUPABASE_KEY;
+                const geminiKey = localStorage.getItem('gemini_api_key') || GEMINI_API_KEY_DEFAULT;
                 if (document.getElementById('configGeminiKey')) {
                     document.getElementById('configGeminiKey').value = geminiKey;
                 }
@@ -3674,7 +3675,7 @@
             const modal = document.getElementById('modalAsistenteIA');
             if (!modal) return;
 
-            const geminiKey = localStorage.getItem('gemini_api_key') || '';
+            const geminiKey = localStorage.getItem('gemini_api_key') || GEMINI_API_KEY_DEFAULT;
             const alerta = document.getElementById('alertaFaltaGeminiKey');
             if (alerta) {
                 alerta.style.display = geminiKey ? 'none' : 'block';
@@ -3858,7 +3859,7 @@
                 return;
             }
 
-            const geminiKey = localStorage.getItem('gemini_api_key') || '';
+            const geminiKey = localStorage.getItem('gemini_api_key') || GEMINI_API_KEY_DEFAULT;
             if (!geminiKey) {
                 const alerta = document.getElementById('alertaFaltaGeminiKey');
                 if (alerta) alerta.style.display = 'block';
@@ -4161,7 +4162,7 @@ Cada objeto del arreglo debe tener exactamente esta estructura:
             const modal = document.getElementById('modalVentaVozIA');
             if (!modal) return;
 
-            const geminiKey = localStorage.getItem('gemini_api_key') || '';
+            const geminiKey = localStorage.getItem('gemini_api_key') || GEMINI_API_KEY_DEFAULT;
             if (!geminiKey) {
                 alert('Para usar el Asistente de Ventas por Voz necesitas configurar tu clave gratuita de Google Gemini (puedes configurarla en la pestaña 📦 Gestión de Productos > ✨ Asistente IA o en ⚙️ Base de Datos).');
                 return;
@@ -4265,7 +4266,7 @@ Cada objeto del arreglo debe tener exactamente esta estructura:
                 return;
             }
 
-            const geminiKey = localStorage.getItem('gemini_api_key') || '';
+            const geminiKey = localStorage.getItem('gemini_api_key') || GEMINI_API_KEY_DEFAULT;
             if (!geminiKey) {
                 alert('Para usar el Asistente IA necesitas ingresar tu clave gratuita de Google Gemini.');
                 return;
