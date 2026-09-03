@@ -557,11 +557,11 @@
             margin: 15px 0 25px 0;
         }
         .big-touch-card {
-            background-color: var(--primary-color); /* Negro / Ciruela oscuro del logo */
-            border: 2px solid rgba(255, 255, 255, 0.12);
+            background-color: var(--primary-color) !important; /* Negro / Ciruela oscuro del logo */
+            color: #ffffff !important;
+            border: 2px solid rgba(255, 255, 255, 0.15) !important;
             border-radius: var(--border-radius);
             padding: 24px 20px;
-            color: white;
             cursor: pointer;
             display: flex;
             flex-direction: column;
@@ -574,6 +574,7 @@
             overflow: hidden;
             text-align: left;
             outline: none;
+            -webkit-tap-highlight-color: transparent;
         }
         .big-touch-card:hover,
         .big-touch-card:focus,
@@ -599,6 +600,7 @@
             font-weight: 800;
             margin: 0 0 6px 0;
             line-height: 1.2;
+            color: #ffffff !important;
         }
         .big-touch-card .card-subtitle {
             font-size: 0.88rem;
@@ -606,6 +608,7 @@
             margin: 0;
             font-weight: 500;
             line-height: 1.35;
+            color: rgba(255, 255, 255, 0.88) !important;
         }
         .card-action-pill {
             margin-top: 15px;
@@ -614,7 +617,8 @@
             align-items: center;
             font-size: 0.85rem;
             font-weight: 700;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff !important;
             padding: 7px 14px;
             border-radius: 20px;
             transition: var(--transition);
@@ -622,7 +626,7 @@
         .big-touch-card:hover .card-action-pill,
         .big-touch-card:focus .card-action-pill,
         .big-touch-card:active .card-action-pill {
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.28);
         }
         .btn-mode-toggle {
             background-color: var(--primary-color);
@@ -698,61 +702,61 @@
 
             <div class="panel-modo-simple">
                 <!-- Botón 1: Venta por Voz (IA) -->
-                <div class="big-touch-card" onclick="abrirModalVentaVozIA()" tabindex="0" role="button">
+                <div class="big-touch-card" onclick="abrirModalVentaVozIA()" tabindex="0" role="button" style="background-color: #32252a; color: white;">
                     <div>
                         <span class="card-icon">🎙️✨</span>
-                        <h3 class="card-title">1. Venta por Voz (IA)</h3>
-                        <p class="card-subtitle">Dicta lo que vendiste y la Inteligencia Artificial arma la venta y descuenta el stock</p>
+                        <h3 class="card-title" style="color: white;">1. Venta por Voz (IA)</h3>
+                        <p class="card-subtitle" style="color: rgba(255,255,255,0.85);">Dicta lo que vendiste y la Inteligencia Artificial arma la venta y descuenta el stock</p>
                     </div>
-                    <div class="card-action-pill">
+                    <div class="card-action-pill" style="background: rgba(255,255,255,0.12); color: white;">
                         <span>🎙️ Tocar para Dictar Venta</span>
                         <span style="font-size: 1.1rem;">👉</span>
                     </div>
                 </div>
 
                 <!-- Botón 2: Cargar Productos (Foto / Voz / IA) -->
-                <div class="big-touch-card" onclick="abrirModalAsistenteIA()" tabindex="0" role="button">
+                <div class="big-touch-card" onclick="abrirModalAsistenteIA()" tabindex="0" role="button" style="background-color: #32252a; color: white;">
                     <div>
                         <span class="card-icon">📷✨</span>
-                        <h3 class="card-title">2. Cargar Mercadería</h3>
-                        <p class="card-subtitle">Sácale una foto al ticket/factura o dicta los productos comprados</p>
+                        <h3 class="card-title" style="color: white;">2. Cargar Mercadería</h3>
+                        <p class="card-subtitle" style="color: rgba(255,255,255,0.85);">Sácale una foto al ticket/factura o dicta los productos comprados</p>
                     </div>
-                    <div class="card-action-pill">
+                    <div class="card-action-pill" style="background: rgba(255,255,255,0.12); color: white;">
                         <span>📷 Tocar para Cargar Stock</span>
                         <span style="font-size: 1.1rem;">👉</span>
                     </div>
                 </div>
 
                 <!-- Botón 3: Ventas y Ganancias de Hoy -->
-                <div class="big-touch-card" onclick="cambiarPantalla('reportes'); activarModoCompleto();" tabindex="0" role="button">
+                <div class="big-touch-card" onclick="cambiarPantalla('reportes'); activarModoCompleto();" tabindex="0" role="button" style="background-color: #32252a; color: white;">
                     <div>
                         <span class="card-icon">💰</span>
-                        <h3 class="card-title">3. Resumen de Hoy</h3>
+                        <h3 class="card-title" style="color: white;">3. Resumen de Hoy</h3>
                         <div style="margin-top: 10px; background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
                             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.92rem; margin-bottom: 6px;">
-                                <span style="opacity: 0.9;">Total Vendido:</span>
+                                <span style="opacity: 0.9; color: rgba(255,255,255,0.85);">Total Vendido:</span>
                                 <strong id="kpiSimpleFacturado" style="font-family: monospace; font-size: 1.2rem; color: white;">$0,00</strong>
                             </div>
                             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.92rem;">
-                                <span style="opacity: 0.9;">Ganancia Hoy:</span>
+                                <span style="opacity: 0.9; color: rgba(255,255,255,0.85);">Ganancia Hoy:</span>
                                 <strong id="kpiSimpleGanancia" style="font-family: monospace; font-size: 1.2rem; color: #f8bbd0;">$0,00</strong>
                             </div>
                         </div>
                     </div>
-                    <div class="card-action-pill">
+                    <div class="card-action-pill" style="background: rgba(255,255,255,0.12); color: white;">
                         <span>📊 Ver Reportes Detallados</span>
                         <span style="font-size: 1.1rem;">👉</span>
                     </div>
                 </div>
 
                 <!-- Botón 4: Sistema Completo (Todas las tablas) -->
-                <div class="big-touch-card" onclick="activarModoCompleto()" tabindex="0" role="button">
+                <div class="big-touch-card" onclick="activarModoCompleto()" tabindex="0" role="button" style="background-color: #32252a; color: white;">
                     <div>
                         <span class="card-icon">🖥️</span>
-                        <h3 class="card-title">4. Sistema Completo</h3>
-                        <p class="card-subtitle">Accede a todas las pestañas: productos, proveedores, reportes y caja</p>
+                        <h3 class="card-title" style="color: white;">4. Sistema Completo</h3>
+                        <p class="card-subtitle" style="color: rgba(255,255,255,0.85);">Accede a todas las pestañas: productos, proveedores, reportes y caja</p>
                     </div>
-                    <div class="card-action-pill">
+                    <div class="card-action-pill" style="background: rgba(255,255,255,0.12); color: white;">
                         <span>🖥️ Abrir Tablas y Menú</span>
                         <span style="font-size: 1.1rem;">👉</span>
                     </div>
