@@ -10,6 +10,10 @@
 *.avi
 *.pdf
 
+# Build artifacts (la app se sirve directamente desde la raíz, sin build)
+dist/
+.vite/
+
 # OS generated files
 Thumbs.db
 ehthumbs.db
