@@ -294,6 +294,13 @@ export function renderizarTablaPreviaIA(productos) {
                     <option value="carbón" ${prod.categoria?.toLowerCase() === 'carbón' || prod.categoria?.toLowerCase() === 'carbon' ? 'selected' : ''}>Carbón</option>
                     <option value="panadería" ${prod.categoria?.toLowerCase() === 'panadería' || prod.categoria?.toLowerCase() === 'panaderia' ? 'selected' : ''}>Panadería</option>
                     <option value="fiambreria" ${prod.categoria?.toLowerCase() === 'fiambreria' ? 'selected' : ''}>Fiambrería</option>
+                    <option value="Farmacia" ${prod.categoria?.toLowerCase() === 'farmacia' ? 'selected' : ''}>Farmacia</option>
+                    <option value="Carnicería" ${prod.categoria?.toLowerCase() === 'carnicería' || prod.categoria?.toLowerCase() === 'carniceria' ? 'selected' : ''}>Carnicería</option>
+                    <option value="Pollería" ${prod.categoria?.toLowerCase() === 'pollería' || prod.categoria?.toLowerCase() === 'polleria' ? 'selected' : ''}>Pollería</option>
+                    <option value="Condimentos" ${prod.categoria?.toLowerCase() === 'condimentos' ? 'selected' : ''}>Condimentos</option>
+                    <option value="Lácteos" ${prod.categoria?.toLowerCase() === 'lácteos' || prod.categoria?.toLowerCase() === 'lacteos' ? 'selected' : ''}>Lácteos</option>
+                    <option value="Bebidas con Alcohol" ${prod.categoria?.toLowerCase() === 'bebidas con alcohol' ? 'selected' : ''}>Bebidas con Alcohol</option>
+                    <option value="Bebidas sin Alcohol" ${prod.categoria?.toLowerCase() === 'bebidas sin alcohol' ? 'selected' : ''}>Bebidas sin Alcohol</option>
                     <option value="Sin categoría" ${!prod.categoria ? 'selected' : ''}>Sin categoría</option>
                 </select>
             </td>
