@@ -301,6 +301,9 @@ export function renderizarTablaPreviaIA(productos) {
                     <option value="Lácteos" ${prod.categoria?.toLowerCase() === 'lácteos' || prod.categoria?.toLowerCase() === 'lacteos' ? 'selected' : ''}>Lácteos</option>
                     <option value="Bebidas con Alcohol" ${prod.categoria?.toLowerCase() === 'bebidas con alcohol' ? 'selected' : ''}>Bebidas con Alcohol</option>
                     <option value="Bebidas sin Alcohol" ${prod.categoria?.toLowerCase() === 'bebidas sin alcohol' ? 'selected' : ''}>Bebidas sin Alcohol</option>
+                    <option value="Galletitas" ${prod.categoria?.toLowerCase() === 'galletitas' ? 'selected' : ''}>Galletitas</option>
+                    <option value="Lácteos / Quesos" ${prod.categoria?.toLowerCase() === 'lácteos / quesos' || prod.categoria?.toLowerCase() === 'lacteos / quesos' ? 'selected' : ''}>Lácteos / Quesos</option>
+                    <option value="Embutidos" ${prod.categoria?.toLowerCase() === 'embutidos' ? 'selected' : ''}>Embutidos</option>
                     <option value="Sin categoría" ${!prod.categoria ? 'selected' : ''}>Sin categoría</option>
                 </select>
             </td>
