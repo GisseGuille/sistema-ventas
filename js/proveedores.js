@@ -282,43 +282,55 @@ export async function guardarPagoProveedor(event) {
         return;
     }
 
-    const pagos = await obtenerPagosProveedores();
-
-    if (editPaymentId) {
-        const index = pagos.findIndex(p => p.id === editPaymentId);
-        if (index !== -1) {
-            pagos[index].fecha_compra = fechaCompra;
-            pagos[index].proveedor = proveedor;
-            pagos[index].importe = importe;
-            pagos[index].forma_pago = formaPago;
-            pagos[index].fecha_pago = fechaPago;
-            pagos[index].estado = estado;
-            pagos[index].notas = notas;
-            if (tempComprobanteBase64 !== null) {
-                pagos[index].comprobante_base64 = tempComprobanteBase64;
-            }
-        }
-        alert('¡Comprobante actualizado correctamente!');
-    } else {
-        const nuevoPago = {
-            id: 'pago-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6),
-            fecha_compra: fechaCompra,
-            proveedor: proveedor,
-            importe: importe,
-            forma_pago: formaPago,
-            fecha_pago: fechaPago,
-            estado: estado,
-            notas: notas,
-            comprobante_base64: tempComprobanteBase64 || null,
-            fecha_registro: new Date().toISOString()
-        };
-        pagos.unshift(nuevoPago);
-        alert('¡Comprobante y pago registrado con éxito!');
+    // Evita que toques repetidos del botón (mientras se está guardando) registren el mismo
+    // pago varias veces.
+    const btnGuardarPago = document.getElementById('btnSubmitPago');
+    if (btnGuardarPago) {
+        if (btnGuardarPago.disabled) return;
+        btnGuardarPago.disabled = true;
     }
 
-    await guardarPagosProveedoresEnStorage(pagos);
-    cancelarEdicionPago();
-    await renderPagosProveedores();
+    try {
+        const pagos = await obtenerPagosProveedores();
+
+        if (editPaymentId) {
+            const index = pagos.findIndex(p => p.id === editPaymentId);
+            if (index !== -1) {
+                pagos[index].fecha_compra = fechaCompra;
+                pagos[index].proveedor = proveedor;
+                pagos[index].importe = importe;
+                pagos[index].forma_pago = formaPago;
+                pagos[index].fecha_pago = fechaPago;
+                pagos[index].estado = estado;
+                pagos[index].notas = notas;
+                if (tempComprobanteBase64 !== null) {
+                    pagos[index].comprobante_base64 = tempComprobanteBase64;
+                }
+            }
+            alert('¡Comprobante actualizado correctamente!');
+        } else {
+            const nuevoPago = {
+                id: 'pago-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6),
+                fecha_compra: fechaCompra,
+                proveedor: proveedor,
+                importe: importe,
+                forma_pago: formaPago,
+                fecha_pago: fechaPago,
+                estado: estado,
+                notas: notas,
+                comprobante_base64: tempComprobanteBase64 || null,
+                fecha_registro: new Date().toISOString()
+            };
+            pagos.unshift(nuevoPago);
+            alert('¡Comprobante y pago registrado con éxito!');
+        }
+
+        await guardarPagosProveedoresEnStorage(pagos);
+        cancelarEdicionPago();
+        await renderPagosProveedores();
+    } finally {
+        if (btnGuardarPago) btnGuardarPago.disabled = false;
+    }
 }
 
 export async function renderPagosProveedores() {

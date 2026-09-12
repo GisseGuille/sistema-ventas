@@ -185,96 +185,108 @@ export async function confirmarVenta() {
         return;
     }
 
-    const productos = await obtenerProductos();
-    const itemsVenta = [];
-    const idsAgregados = new Set();
-    let totalVenta = 0;
-
-    for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        const select = row.querySelector('.select-sale-product');
-        const qtyInput = row.querySelector('.input-sale-qty');
-
-        if (!select || select.value === '') {
-            alert('Por favor, seleccione un producto en todas las filas.');
-            select.focus();
-            return;
-        }
-
-        const prodId = select.value;
-        const cantidad = parseFloat(qtyInput.value);
-
-        if (isNaN(cantidad) || cantidad <= 0) {
-            alert('La cantidad ingresada debe ser un número válido mayor a 0.');
-            qtyInput.focus();
-            return;
-        }
-
-        if (idsAgregados.has(prodId)) {
-            alert('Has agregado el mismo producto más de una vez. Unifica las cantidades en una sola línea.');
-            select.focus();
-            return;
-        }
-
-        const prodOriginal = productos.find(p => p.id === prodId);
-        if (!prodOriginal) {
-            alert('El producto ya no se encuentra en el listado.');
-            return;
-        }
-
-        if (cantidad > prodOriginal.cantidad) {
-            const stockFmt = formatearCantidad(prodOriginal.cantidad, prodOriginal.unidad_medida);
-            const solFmt = formatearCantidad(cantidad, prodOriginal.unidad_medida);
-            alert(`Stock insuficiente para "${prodOriginal.nombre}". Stock disponible: ${stockFmt}, solicitado: ${solFmt}.`);
-            qtyInput.focus();
-            return;
-        }
-
-        idsAgregados.add(prodId);
-        totalVenta += prodOriginal.precio * cantidad;
-
-        itemsVenta.push({
-            id: prodId,
-            nombre: prodOriginal.nombre,
-            costo: prodOriginal.costo !== undefined ? prodOriginal.costo : 0,
-            precio: prodOriginal.precio,
-            cantidad: cantidad,
-            unidad_medida: prodOriginal.unidad_medida || 'Unidades'
-        });
+    // Evita que toques repetidos del botón (mientras la venta anterior aún se está guardando)
+    // registren la misma venta varias veces.
+    const btnConfirmar = document.getElementById('btnConfirmSale');
+    if (btnConfirmar) {
+        if (btnConfirmar.disabled) return;
+        btnConfirmar.disabled = true;
     }
 
-    itemsVenta.forEach(item => {
-        const prod = productos.find(p => p.id === item.id);
-        if (prod) {
-            prod.cantidad = Math.round((prod.cantidad - item.cantidad) * 1000) / 1000;
+    try {
+        const productos = await obtenerProductos();
+        const itemsVenta = [];
+        const idsAgregados = new Set();
+        let totalVenta = 0;
+
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const select = row.querySelector('.select-sale-product');
+            const qtyInput = row.querySelector('.input-sale-qty');
+
+            if (!select || select.value === '') {
+                alert('Por favor, seleccione un producto en todas las filas.');
+                select.focus();
+                return;
+            }
+
+            const prodId = select.value;
+            const cantidad = parseFloat(qtyInput.value);
+
+            if (isNaN(cantidad) || cantidad <= 0) {
+                alert('La cantidad ingresada debe ser un número válido mayor a 0.');
+                qtyInput.focus();
+                return;
+            }
+
+            if (idsAgregados.has(prodId)) {
+                alert('Has agregado el mismo producto más de una vez. Unifica las cantidades en una sola línea.');
+                select.focus();
+                return;
+            }
+
+            const prodOriginal = productos.find(p => p.id === prodId);
+            if (!prodOriginal) {
+                alert('El producto ya no se encuentra en el listado.');
+                return;
+            }
+
+            if (cantidad > prodOriginal.cantidad) {
+                const stockFmt = formatearCantidad(prodOriginal.cantidad, prodOriginal.unidad_medida);
+                const solFmt = formatearCantidad(cantidad, prodOriginal.unidad_medida);
+                alert(`Stock insuficiente para "${prodOriginal.nombre}". Stock disponible: ${stockFmt}, solicitado: ${solFmt}.`);
+                qtyInput.focus();
+                return;
+            }
+
+            idsAgregados.add(prodId);
+            totalVenta += prodOriginal.precio * cantidad;
+
+            itemsVenta.push({
+                id: prodId,
+                nombre: prodOriginal.nombre,
+                costo: prodOriginal.costo !== undefined ? prodOriginal.costo : 0,
+                precio: prodOriginal.precio,
+                cantidad: cantidad,
+                unidad_medida: prodOriginal.unidad_medida || 'Unidades'
+            });
         }
-    });
 
-    await guardarProductosEnStorage(productos);
+        itemsVenta.forEach(item => {
+            const prod = productos.find(p => p.id === item.id);
+            if (prod) {
+                prod.cantidad = Math.round((prod.cantidad - item.cantidad) * 1000) / 1000;
+            }
+        });
 
-    const nuevaVenta = {
-        id: 'sale-' + Date.now(),
-        fecha: new Date().toISOString(),
-        productos: itemsVenta,
-        total: totalVenta
-    };
+        await guardarProductosEnStorage(productos);
 
-    await guardarVentaEnStorage(nuevaVenta);
+        const nuevaVenta = {
+            id: 'sale-' + Date.now(),
+            fecha: new Date().toISOString(),
+            productos: itemsVenta,
+            total: totalVenta
+        };
 
-    container.innerHTML = '';
-    actualizarPreciosVenta();
+        await guardarVentaEnStorage(nuevaVenta);
 
-    await renderProductos();
+        container.innerHTML = '';
+        actualizarPreciosVenta();
 
-    await actualizarReportes();
-    await renderVentasDelDia();
-    await actualizarMetricasModoSimple();
+        await renderProductos();
 
-    alert('¡Venta confirmada correctamente! El stock ha sido descontado.');
+        await actualizarReportes();
+        await renderVentasDelDia();
+        await actualizarMetricasModoSimple();
 
-    const productosConStock = productos.filter(p => p.cantidad > 0);
-    if (productosConStock.length > 0) {
-        await agregarFilaVenta();
+        alert('¡Venta confirmada correctamente! El stock ha sido descontado.');
+
+        const productosConStock = productos.filter(p => p.cantidad > 0);
+        if (productosConStock.length > 0) {
+            await agregarFilaVenta();
+        }
+    } finally {
+        if (btnConfirmar) btnConfirmar.disabled = false;
     }
 }
 

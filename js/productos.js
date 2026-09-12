@@ -218,70 +218,82 @@ export async function guardarProducto() {
         return;
     }
 
-    const productos = await obtenerProductos();
-
-    const nombreNormalizado = nombre.toLowerCase().trim();
-    const nombreDuplicado = productos.some(p =>
-        p.nombre.toLowerCase().trim() === nombreNormalizado &&
-        p.id !== editProductId &&
-        (p.estado || 'Activo') === 'Activo'
-    );
-
-    if (nombreDuplicado) {
-        alert('El producto ya existe.');
-        document.getElementById('prodNombre').focus();
-        return;
+    // Evita que toques repetidos del botón (mientras se está guardando) creen/actualicen el
+    // producto varias veces.
+    const btnGuardarProducto = document.getElementById('btnSubmit');
+    if (btnGuardarProducto) {
+        if (btnGuardarProducto.disabled) return;
+        btnGuardarProducto.disabled = true;
     }
 
-    if (editProductId) {
-        const index = productos.findIndex(p => p.id === editProductId);
-        if (index !== -1) {
-            productos[index].nombre = nombre;
-            productos[index].categoria = categoria || 'Sin categoría';
-            productos[index].costo = costo;
-            productos[index].ganancia = ganancia;
-            productos[index].precio = precio;
-            productos[index].cantidad = cantidad;
-            productos[index].unidad_medida = unidadMedida;
-            productos[index].fecha = fecha;
-            productos[index].estado = estado;
+    try {
+        const productos = await obtenerProductos();
 
-            await guardarProductosEnStorage(productos);
-            alert('¡Producto actualizado con éxito!');
+        const nombreNormalizado = nombre.toLowerCase().trim();
+        const nombreDuplicado = productos.some(p =>
+            p.nombre.toLowerCase().trim() === nombreNormalizado &&
+            p.id !== editProductId &&
+            (p.estado || 'Activo') === 'Activo'
+        );
+
+        if (nombreDuplicado) {
+            alert('El producto ya existe.');
+            document.getElementById('prodNombre').focus();
+            return;
         }
 
-        editProductId = null;
-        const btnSubmit = document.getElementById('btnSubmit');
-        if (btnSubmit) btnSubmit.innerText = 'Guardar Producto';
-        const btnCancel = document.getElementById('btnCancelEdit');
-        if (btnCancel) btnCancel.style.display = 'none';
+        if (editProductId) {
+            const index = productos.findIndex(p => p.id === editProductId);
+            if (index !== -1) {
+                productos[index].nombre = nombre;
+                productos[index].categoria = categoria || 'Sin categoría';
+                productos[index].costo = costo;
+                productos[index].ganancia = ganancia;
+                productos[index].precio = precio;
+                productos[index].cantidad = cantidad;
+                productos[index].unidad_medida = unidadMedida;
+                productos[index].fecha = fecha;
+                productos[index].estado = estado;
 
-    } else {
-        const nuevoProducto = {
-            id: Date.now().toString(),
-            nombre: nombre,
-            categoria: categoria || 'Sin categoría',
-            costo: costo,
-            ganancia: ganancia,
-            precio: precio,
-            cantidad: cantidad,
-            unidad_medida: unidadMedida,
-            fecha: fecha,
-            estado: estado || 'Activo'
-        };
+                await guardarProductosEnStorage(productos);
+                alert('¡Producto actualizado con éxito!');
+            }
 
-        productos.push(nuevoProducto);
-        await guardarProductosEnStorage(productos);
-        alert('¡Producto guardado con éxito!');
+            editProductId = null;
+            const btnSubmit = document.getElementById('btnSubmit');
+            if (btnSubmit) btnSubmit.innerText = 'Guardar Producto';
+            const btnCancel = document.getElementById('btnCancelEdit');
+            if (btnCancel) btnCancel.style.display = 'none';
+
+        } else {
+            const nuevoProducto = {
+                id: Date.now().toString(),
+                nombre: nombre,
+                categoria: categoria || 'Sin categoría',
+                costo: costo,
+                ganancia: ganancia,
+                precio: precio,
+                cantidad: cantidad,
+                unidad_medida: unidadMedida,
+                fecha: fecha,
+                estado: estado || 'Activo'
+            };
+
+            productos.push(nuevoProducto);
+            await guardarProductosEnStorage(productos);
+            alert('¡Producto guardado con éxito!');
+        }
+
+        document.getElementById('productForm').reset();
+        inicializarFecha();
+
+        if (document.getElementById('searchNombre')) document.getElementById('searchNombre').value = '';
+        if (document.getElementById('filterCategoria')) document.getElementById('filterCategoria').value = '';
+
+        await renderProductos();
+    } finally {
+        if (btnGuardarProducto) btnGuardarProducto.disabled = false;
     }
-
-    document.getElementById('productForm').reset();
-    inicializarFecha();
-
-    if (document.getElementById('searchNombre')) document.getElementById('searchNombre').value = '';
-    if (document.getElementById('filterCategoria')) document.getElementById('filterCategoria').value = '';
-
-    await renderProductos();
 }
 
 // Eliminar un producto (Baja directa y definitiva)

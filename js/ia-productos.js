@@ -390,66 +390,78 @@ export async function confirmarGuardadoProductosIA() {
         return;
     }
 
-    const productosBD = await obtenerProductos();
-    let agregadosCount = 0;
-    let actualizadosCount = 0;
-    const fechaHoy = new Date().toISOString().split('T')[0];
+    // Evita que toques repetidos del botón (mientras se está guardando) dupliquen el stock
+    // de los mismos productos varias veces.
+    const btnConfirmar = document.getElementById('btnConfirmarGuardadoIA');
+    if (btnConfirmar) {
+        if (btnConfirmar.disabled) return;
+        btnConfirmar.disabled = true;
+    }
 
-    productosIAPrevia.forEach(prod => {
-        const nombre = (prod.nombre || '').trim();
-        if (!nombre) return;
+    try {
+        const productosBD = await obtenerProductos();
+        let agregadosCount = 0;
+        let actualizadosCount = 0;
+        const fechaHoy = new Date().toISOString().split('T')[0];
 
-        const costo = Number(prod.costo) || 0;
-        const ganancia = Number(prod.ganancia) || 0;
-        const precio = costo * (1 + (ganancia / 100));
-        const cantidad = Number(prod.cantidad) || 0;
-        const unidad_medida = prod.unidad_medida || 'Unidades';
-        const categoria = prod.categoria || 'Sin categoría';
+        productosIAPrevia.forEach(prod => {
+            const nombre = (prod.nombre || '').trim();
+            if (!nombre) return;
 
-        const nombreNormalizado = nombre.toLowerCase();
-        const indexExistente = productosBD.findIndex(p =>
-            p.nombre.toLowerCase().trim() === nombreNormalizado &&
-            (p.estado || 'Activo') === 'Activo'
+            const costo = Number(prod.costo) || 0;
+            const ganancia = Number(prod.ganancia) || 0;
+            const precio = costo * (1 + (ganancia / 100));
+            const cantidad = Number(prod.cantidad) || 0;
+            const unidad_medida = prod.unidad_medida || 'Unidades';
+            const categoria = prod.categoria || 'Sin categoría';
+
+            const nombreNormalizado = nombre.toLowerCase();
+            const indexExistente = productosBD.findIndex(p =>
+                p.nombre.toLowerCase().trim() === nombreNormalizado &&
+                (p.estado || 'Activo') === 'Activo'
+            );
+
+            if (indexExistente !== -1) {
+                productosBD[indexExistente].cantidad = Math.round((productosBD[indexExistente].cantidad + cantidad) * 1000) / 1000;
+                productosBD[indexExistente].costo = costo;
+                productosBD[indexExistente].ganancia = ganancia;
+                productosBD[indexExistente].precio = precio;
+                productosBD[indexExistente].unidad_medida = unidad_medida;
+                if (categoria !== 'Sin categoría') {
+                    productosBD[indexExistente].categoria = categoria;
+                }
+                actualizadosCount++;
+            } else {
+                productosBD.push({
+                    id: 'prod-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+                    nombre: nombre,
+                    categoria: categoria,
+                    costo: costo,
+                    ganancia: ganancia,
+                    precio: precio,
+                    cantidad: cantidad,
+                    unidad_medida: unidad_medida,
+                    fecha: fechaHoy,
+                    estado: 'Activo'
+                });
+                agregadosCount++;
+            }
+        });
+
+        await guardarProductosEnStorage(productosBD);
+        await renderProductos();
+        await actualizarDropdownsVenta();
+
+        alert(
+            `✨ ¡Productos guardados con éxito!\n\n` +
+            `• Productos Nuevos: ${agregadosCount}\n` +
+            `• Productos Actualizados (Stock sumado): ${actualizadosCount}`
         );
 
-        if (indexExistente !== -1) {
-            productosBD[indexExistente].cantidad = Math.round((productosBD[indexExistente].cantidad + cantidad) * 1000) / 1000;
-            productosBD[indexExistente].costo = costo;
-            productosBD[indexExistente].ganancia = ganancia;
-            productosBD[indexExistente].precio = precio;
-            productosBD[indexExistente].unidad_medida = unidad_medida;
-            if (categoria !== 'Sin categoría') {
-                productosBD[indexExistente].categoria = categoria;
-            }
-            actualizadosCount++;
-        } else {
-            productosBD.push({
-                id: 'prod-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                nombre: nombre,
-                categoria: categoria,
-                costo: costo,
-                ganancia: ganancia,
-                precio: precio,
-                cantidad: cantidad,
-                unidad_medida: unidad_medida,
-                fecha: fechaHoy,
-                estado: 'Activo'
-            });
-            agregadosCount++;
-        }
-    });
-
-    await guardarProductosEnStorage(productosBD);
-    await renderProductos();
-    await actualizarDropdownsVenta();
-
-    alert(
-        `✨ ¡Productos guardados con éxito!\n\n` +
-        `• Productos Nuevos: ${agregadosCount}\n` +
-        `• Productos Actualizados (Stock sumado): ${actualizadosCount}`
-    );
-
-    cancelarPreviewIA();
-    limpiarEntradaIA();
-    cerrarModalAsistenteIA();
+        cancelarPreviewIA();
+        limpiarEntradaIA();
+        cerrarModalAsistenteIA();
+    } finally {
+        if (btnConfirmar) btnConfirmar.disabled = false;
+    }
 }

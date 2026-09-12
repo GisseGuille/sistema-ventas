@@ -333,74 +333,85 @@ export async function confirmarVentaVozIA() {
         return;
     }
 
-    const productosBD = await obtenerProductos();
-
-    for (const item of itemsVentaIAPrevia) {
-        if (item.cantidad <= 0) {
-            alert(`La cantidad para "${item.nombre}" debe ser mayor a 0.`);
-            return;
-        }
-        const prodOriginal = productosBD.find(p => p.id === item.id);
-        if (!prodOriginal) {
-            alert(`El producto "${item.nombre}" ya no existe en el catálogo.`);
-            return;
-        }
-        if (item.cantidad > prodOriginal.cantidad) {
-            const stockFmt = formatearCantidad(prodOriginal.cantidad, prodOriginal.unidad_medida);
-            const solFmt = formatearCantidad(item.cantidad, item.unidad_medida);
-            alert(`Stock insuficiente para "${prodOriginal.nombre}". Stock disponible: ${stockFmt}, solicitado: ${solFmt}.`);
-            return;
-        }
+    // Evita que toques repetidos del botón registren la misma venta varias veces.
+    const btnConfirmar = document.getElementById('btnConfirmarVentaIA');
+    if (btnConfirmar) {
+        if (btnConfirmar.disabled) return;
+        btnConfirmar.disabled = true;
     }
 
-    let totalVenta = 0;
-    const itemsFinales = [];
+    try {
+        const productosBD = await obtenerProductos();
 
-    itemsVentaIAPrevia.forEach(item => {
-        const prod = productosBD.find(p => p.id === item.id);
-        if (prod) {
-            prod.cantidad = Math.round((prod.cantidad - item.cantidad) * 1000) / 1000;
+        for (const item of itemsVentaIAPrevia) {
+            if (item.cantidad <= 0) {
+                alert(`La cantidad para "${item.nombre}" debe ser mayor a 0.`);
+                return;
+            }
+            const prodOriginal = productosBD.find(p => p.id === item.id);
+            if (!prodOriginal) {
+                alert(`El producto "${item.nombre}" ya no existe en el catálogo.`);
+                return;
+            }
+            if (item.cantidad > prodOriginal.cantidad) {
+                const stockFmt = formatearCantidad(prodOriginal.cantidad, prodOriginal.unidad_medida);
+                const solFmt = formatearCantidad(item.cantidad, item.unidad_medida);
+                alert(`Stock insuficiente para "${prodOriginal.nombre}". Stock disponible: ${stockFmt}, solicitado: ${solFmt}.`);
+                return;
+            }
         }
-        totalVenta += item.precio * item.cantidad;
-        itemsFinales.push({
-            id: item.id,
-            producto_id: item.id,
-            nombre: item.nombre,
-            costo: item.costo,
-            precio: item.precio,
-            cantidad: item.cantidad,
-            unidad_medida: item.unidad_medida
+
+        let totalVenta = 0;
+        const itemsFinales = [];
+
+        itemsVentaIAPrevia.forEach(item => {
+            const prod = productosBD.find(p => p.id === item.id);
+            if (prod) {
+                prod.cantidad = Math.round((prod.cantidad - item.cantidad) * 1000) / 1000;
+            }
+            totalVenta += item.precio * item.cantidad;
+            itemsFinales.push({
+                id: item.id,
+                producto_id: item.id,
+                nombre: item.nombre,
+                costo: item.costo,
+                precio: item.precio,
+                cantidad: item.cantidad,
+                unidad_medida: item.unidad_medida
+            });
         });
-    });
 
-    await guardarProductosEnStorage(productosBD);
+        await guardarProductosEnStorage(productosBD);
 
-    const cliente = document.getElementById('previewVentaCliente') ? document.getElementById('previewVentaCliente').value.trim() || 'Consumidor Final' : 'Consumidor Final';
-    const formaPago = document.getElementById('previewVentaFormaPago') ? document.getElementById('previewVentaFormaPago').value : 'Efectivo';
+        const cliente = document.getElementById('previewVentaCliente') ? document.getElementById('previewVentaCliente').value.trim() || 'Consumidor Final' : 'Consumidor Final';
+        const formaPago = document.getElementById('previewVentaFormaPago') ? document.getElementById('previewVentaFormaPago').value : 'Efectivo';
 
-    const nuevaVenta = {
-        id: 'sale-' + Date.now(),
-        fecha: new Date().toISOString(),
-        productos: itemsFinales,
-        total: totalVenta,
-        cliente: cliente,
-        forma_pago: formaPago
-    };
+        const nuevaVenta = {
+            id: 'sale-' + Date.now(),
+            fecha: new Date().toISOString(),
+            productos: itemsFinales,
+            total: totalVenta,
+            cliente: cliente,
+            forma_pago: formaPago
+        };
 
-    await guardarVentaEnStorage(nuevaVenta);
-    await renderProductos();
-    await actualizarReportes();
-    await renderVentasDelDia();
-    await actualizarMetricasModoSimple();
+        await guardarVentaEnStorage(nuevaVenta);
+        await renderProductos();
+        await actualizarReportes();
+        await renderVentasDelDia();
+        await actualizarMetricasModoSimple();
 
-    const totalFmt = new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: 'ARS'
-    }).format(totalVenta);
+        const totalFmt = new Intl.NumberFormat('es-AR', {
+            style: 'currency',
+            currency: 'ARS'
+        }).format(totalVenta);
 
-    alert(`✨ ¡Venta por Voz registrada con éxito!\n\n• Total: ${totalFmt}\n• Forma de pago: ${formaPago}\n• Cliente: ${cliente}\n\nEl stock ha sido descontado correctamente.`);
+        alert(`✨ ¡Venta por Voz registrada con éxito!\n\n• Total: ${totalFmt}\n• Forma de pago: ${formaPago}\n• Cliente: ${cliente}\n\nEl stock ha sido descontado correctamente.`);
 
-    cancelarPreviewVentaIA();
-    limpiarEntradaVentaIA();
-    cerrarModalVentaVozIA();
+        cancelarPreviewVentaIA();
+        limpiarEntradaVentaIA();
+        cerrarModalVentaVozIA();
+    } finally {
+        if (btnConfirmar) btnConfirmar.disabled = false;
+    }
 }
