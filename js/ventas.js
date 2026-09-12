@@ -128,6 +128,12 @@ export function actualizarPreciosVenta() {
             currency: 'ARS'
         }).format(total);
     }
+
+    // Sin productos cargados en la venta, no tiene sentido poder confirmarla.
+    const btnConfirmar = document.getElementById('btnConfirmSale');
+    if (btnConfirmar) {
+        btnConfirmar.disabled = rows.length === 0;
+    }
 }
 
 // Sincroniza los dropdowns cuando cambia la base de datos de productos (sin perder la selección actual)
@@ -279,7 +285,7 @@ export async function confirmarVenta() {
         await renderVentasDelDia();
         await actualizarMetricasModoSimple();
 
-        alert('¡Venta confirmada correctamente! El stock ha sido descontado.');
+        alert('La venta ha sido cargada.');
 
         const productosConStock = productos.filter(p => p.cantidad > 0);
         if (productosConStock.length > 0) {
