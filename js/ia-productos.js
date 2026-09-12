@@ -7,6 +7,7 @@ import { obtenerGeminiKeyPersonalizada } from './config.js';
 
 let recognitionIA = null;
 let isRecordingIA = false;
+let textoAcumuladoIA = '';
 let productosIAPrevia = [];
 let fotoTicketIABase64 = null;
 
@@ -123,29 +124,45 @@ export function iniciarGrabacionIA() {
     if (!recognitionIA) {
         recognitionIA = new SpeechRecognition();
         recognitionIA.lang = 'es-AR';
-        recognitionIA.continuous = true;
+        // continuous:true no es confiable en el reconocedor de voz de Android: se reinicia
+        // internamente y vuelve a incluir palabras ya reconocidas, duplicándolas. En su lugar,
+        // se reinicia a mano en cada `onend` mientras el usuario siga grabando, acumulando el
+        // texto ya finalizado de cada tanda por separado.
+        recognitionIA.continuous = false;
         recognitionIA.interimResults = true;
 
         recognitionIA.onresult = (event) => {
-            let textoFinal = '';
-            for (let i = 0; i < event.results.length; i++) {
-                textoFinal += event.results[i][0].transcript + ' ';
+            let interino = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcript = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    textoAcumuladoIA += transcript + ' ';
+                } else {
+                    interino += transcript;
+                }
             }
             const textarea = document.getElementById('txtEntradaIA');
             if (textarea) {
-                textarea.value = textoFinal.trim();
+                textarea.value = (textoAcumuladoIA + interino).trim();
             }
         };
 
         recognitionIA.onerror = (event) => {
+            if (event.error === 'no-speech' || event.error === 'aborted') return;
             console.error('Error en reconocimiento de voz IA:', event);
             detenerGrabacionIA();
         };
 
         recognitionIA.onend = () => {
-            detenerGrabacionIA();
+            if (isRecordingIA) {
+                try { recognitionIA.start(); } catch (e) { detenerGrabacionIA(); }
+            }
         };
     }
+
+    textoAcumuladoIA = '';
+    const textareaInicial = document.getElementById('txtEntradaIA');
+    if (textareaInicial) textareaInicial.value = '';
 
     try {
         recognitionIA.start();
@@ -162,12 +179,12 @@ export function iniciarGrabacionIA() {
 }
 
 export function detenerGrabacionIA() {
-    if (recognitionIA && isRecordingIA) {
+    isRecordingIA = false;
+    if (recognitionIA) {
         try {
             recognitionIA.stop();
         } catch(e) {}
     }
-    isRecordingIA = false;
     const btn = document.getElementById('btnGrabarAudioIA');
     const txt = document.getElementById('txtGrabarIA');
     const icon = document.getElementById('iconGrabarIA');

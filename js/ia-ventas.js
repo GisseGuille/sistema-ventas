@@ -8,6 +8,7 @@ import { llamarGemini } from './ia-gemini.js';
 
 let recognitionVentaIA = null;
 let isRecordingVentaIA = false;
+let textoAcumuladoVentaIA = '';
 let itemsVentaIAPrevia = [];
 
 export function abrirModalVentaVozIA() {
@@ -48,29 +49,45 @@ export function iniciarGrabacionVentaIA() {
     if (!recognitionVentaIA) {
         recognitionVentaIA = new SpeechRecognition();
         recognitionVentaIA.lang = 'es-AR';
-        recognitionVentaIA.continuous = true;
+        // continuous:true no es confiable en el reconocedor de voz de Android: se reinicia
+        // internamente y vuelve a incluir palabras ya reconocidas, duplicándolas. En su lugar,
+        // se reinicia a mano en cada `onend` mientras el usuario siga grabando, acumulando el
+        // texto ya finalizado de cada tanda por separado.
+        recognitionVentaIA.continuous = false;
         recognitionVentaIA.interimResults = true;
 
         recognitionVentaIA.onresult = (event) => {
-            let textoFinal = '';
-            for (let i = 0; i < event.results.length; i++) {
-                textoFinal += event.results[i][0].transcript + ' ';
+            let interino = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcript = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    textoAcumuladoVentaIA += transcript + ' ';
+                } else {
+                    interino += transcript;
+                }
             }
             const textarea = document.getElementById('txtEntradaVentaIA');
             if (textarea) {
-                textarea.value = textoFinal.trim();
+                textarea.value = (textoAcumuladoVentaIA + interino).trim();
             }
         };
 
         recognitionVentaIA.onerror = (event) => {
+            if (event.error === 'no-speech' || event.error === 'aborted') return;
             console.error('Error en reconocimiento de voz de venta:', event);
             detenerGrabacionVentaIA();
         };
 
         recognitionVentaIA.onend = () => {
-            detenerGrabacionVentaIA();
+            if (isRecordingVentaIA) {
+                try { recognitionVentaIA.start(); } catch (e) { detenerGrabacionVentaIA(); }
+            }
         };
     }
+
+    textoAcumuladoVentaIA = '';
+    const textareaInicial = document.getElementById('txtEntradaVentaIA');
+    if (textareaInicial) textareaInicial.value = '';
 
     try {
         recognitionVentaIA.start();
@@ -87,12 +104,12 @@ export function iniciarGrabacionVentaIA() {
 }
 
 export function detenerGrabacionVentaIA() {
-    if (recognitionVentaIA && isRecordingVentaIA) {
+    isRecordingVentaIA = false;
+    if (recognitionVentaIA) {
         try {
             recognitionVentaIA.stop();
         } catch(e) {}
     }
-    isRecordingVentaIA = false;
     const btn = document.getElementById('btnGrabarVentaIA');
     const txt = document.getElementById('txtGrabarVentaIA');
     const icon = document.getElementById('iconGrabarVentaIA');
