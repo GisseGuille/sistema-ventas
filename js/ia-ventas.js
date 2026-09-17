@@ -153,11 +153,17 @@ export async function procesarVentaConGeminiIA() {
             unidad_medida: p.unidad_medida || 'Unidades'
         }));
 
+    // Gemini solo necesita estos campos para interpretar la venta y elegir el producto; el
+    // costo real siempre se toma del catálogo local (nunca de lo que devuelva la IA), así que
+    // se excluye del prompt. Con el inventario ya en varios cientos de productos, esto recorta
+    // una parte considerable de los tokens que se envían en cada venta por voz.
+    const catalogoParaIA = catalogo.map(({ id, nombre, categoria, precio, unidad_medida }) => ({ id, nombre, categoria, precio, unidad_medida }));
+
     const promptSistema = `Eres un asistente de punto de venta (POS) para un negocio de alimentos y cocina en Argentina ("Bettina Guille - Cocina").
 Tu trabajo es interpretar un dictado por voz de una venta realizada y mapear cada producto vendido con el catálogo de productos disponibles.
 
 Catálogo disponible:
-${JSON.stringify(catalogo, null, 2)}
+${JSON.stringify(catalogoParaIA)}
 
 Texto dictado:
 "${texto}"
@@ -172,8 +178,7 @@ Debes responder ÚNICAMENTE con un objeto JSON válido (sin markdown \`\`\`json)
       "nombre": "El 'nombre' exacto del producto en el catálogo",
       "cantidad": número decimal o entero vendido (ej: 'dos kilos y medio' -> 2.5, 'medio kilo' -> 0.5, 'un cuarto' -> 0.25, 'tres' -> 3, '500g' -> 0.5 si la unidad es Kilos o 500 si es Gramos),
       "unidad_medida": "La unidad del catálogo ('Kilos', 'Gramos' o 'Unidades')",
-      "precio_unitario": número con el precio del catálogo,
-      "costo": número con el costo del catálogo
+      "precio_unitario": número con el precio del catálogo
     }
   ]
 }
@@ -201,7 +206,7 @@ Reglas:
         itemsVentaIAPrevia = ventaParsed.items.map(item => {
             const prodBD = catalogo.find(p => p.id === item.producto_id) || catalogo.find(p => p.nombre.toLowerCase().trim() === (item.nombre || '').toLowerCase().trim());
             const precio = prodBD ? prodBD.precio : (Number(item.precio_unitario) || 0);
-            const costo = prodBD ? prodBD.costo : (Number(item.costo) || 0);
+            const costo = prodBD ? prodBD.costo : 0;
             const id = prodBD ? prodBD.id : item.producto_id;
             const nombre = prodBD ? prodBD.nombre : item.nombre;
             const unidad = prodBD ? prodBD.unidad_medida : (item.unidad_medida || 'Unidades');
