@@ -14,14 +14,15 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
-// Mismos modelos y orden de fallback que usaba el cliente antes de moverse al servidor.
+// Lista de modelos candidatos a probar en orden. Google renombra/retira modelos "preview" con
+// frecuencia, así que se prueban varias variantes y alias "latest" antes de rendirse.
 const MODELOS = [
-    'gemini-3.5-flash',
     'gemini-3.6-flash',
-    'gemini-3.7-flash',
-    'gemini-3-flash-preview',
     'gemini-flash-latest',
-    'gemini-2.5-pro'
+    'gemini-3.7-flash',
+    'gemini-3.5-flash',
+    'gemini-pro-latest',
+    'gemini-3.1-pro-preview'
 ];
 
 const CORS_HEADERS = {
@@ -67,7 +68,9 @@ serve(async (req) => {
         });
     }
 
-    let lastError = null;
+    // Se registra el error de CADA modelo probado (no solo el último) para poder diagnosticar
+    // rápido cuándo Google retira o renombra un modelo, sin tener que ir probando a ciegas.
+    const intentos: { modelo: string; error: string }[] = [];
 
     for (const modelo of MODELOS) {
         try {
@@ -85,14 +88,17 @@ serve(async (req) => {
                 });
             } else {
                 const errData = await res.json().catch(() => ({}));
-                lastError = errData?.error?.message || `Error ${res.status}`;
+                intentos.push({ modelo, error: errData?.error?.message || `Error ${res.status}` });
             }
         } catch (e) {
-            lastError = e.message;
+            intentos.push({ modelo, error: e.message });
         }
     }
 
-    return new Response(JSON.stringify({ error: lastError || "No se pudo conectar con Gemini." }), {
+    return new Response(JSON.stringify({
+        error: intentos[intentos.length - 1]?.error || "No se pudo conectar con Gemini.",
+        intentos,
+    }), {
         status: 502,
         headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
     });

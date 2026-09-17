@@ -4,7 +4,7 @@
 // clave personal (modal de Configuración / Asistente IA), se llama directamente a Gemini con ella.
 import { GEMINI_PROXY_URL, SUPABASE_KEY, obtenerGeminiKeyPersonalizada } from './config.js';
 
-const MODELOS_GEMINI = ['gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-3-flash-preview', 'gemini-flash-latest', 'gemini-2.5-pro'];
+const MODELOS_GEMINI = ['gemini-3.6-flash', 'gemini-flash-latest', 'gemini-3.7-flash', 'gemini-3.5-flash', 'gemini-pro-latest', 'gemini-3.1-pro-preview'];
 
 // Llama a Gemini con los `contents` (formato de la API generateContent) y devuelve la respuesta cruda.
 export async function llamarGemini(contents, generationConfig) {
